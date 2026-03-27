@@ -24,7 +24,7 @@ export function ProductCard({ product, onAdd }: Props) {
             inStock ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-700"
           }`}
         >
-          {inStock ? "Con hang" : "Da chay hang"}
+          {inStock ? "In stock" : "Sold out"}
         </div>
         <Image
           src={product.image}
@@ -42,11 +42,27 @@ export function ProductCard({ product, onAdd }: Props) {
         </h3>
         <p className="text-xs text-gray-500">SKU: {product.sku}</p>
         <Button
-          className="w-full bg-indigo-600 hover:bg-indigo-700"
+          className="flex w-full items-center justify-center bg-indigo-600 hover:bg-indigo-700"
           onClick={() => onAdd(product)}
           disabled={!inStock}
+          aria-label="Add to cart"
+          title="Add to cart"
         >
-          Add to cart
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            className="h-5 w-5"
+            aria-hidden="true"
+          >
+            <circle cx="9" cy="20" r="1" />
+            <circle cx="17" cy="20" r="1" />
+            <path d="M2 3h2l2.4 11.2a2 2 0 0 0 2 1.6h8.7a2 2 0 0 0 2-1.5L21 7H6" />
+            <path d="M12 9v4" />
+            <path d="M10 11h4" />
+          </svg>
         </Button>
       </div>
     </article>

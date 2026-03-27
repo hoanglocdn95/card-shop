@@ -47,6 +47,10 @@ export function ProductPage() {
   const page = Number.isFinite(pageParam) && pageParam > 0 ? pageParam : 1;
   const pageSizeParam = Number(searchParams.get("pageSize") ?? "10");
   const pageSize = [10, 20, 30].includes(pageSizeParam) ? pageSizeParam : 10;
+  const colsParam = Number(searchParams.get("cols") ?? "4");
+  const columnsPerRow: 2 | 3 | 4 = [2, 3, 4].includes(colsParam)
+    ? (colsParam as 2 | 3 | 4)
+    : 4;
   const sortParam = searchParams.get("sort");
   const sort: ProductSort =
     sortParam === "price-asc" || sortParam === "price-desc"
@@ -103,10 +107,10 @@ export function ProductPage() {
     const normalized = value.trim();
     if (!normalized || normalized.length < 2) return;
     setRecentSearches((prev) => {
-      const next = [normalized, ...prev.filter((item) => item !== normalized)].slice(
-        0,
-        MAX_RECENT_SEARCHES,
-      );
+      const next = [
+        normalized,
+        ...prev.filter((item) => item !== normalized),
+      ].slice(0, MAX_RECENT_SEARCHES);
       window.localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(next));
       return next;
     });
@@ -155,12 +159,21 @@ export function ProductPage() {
 
       if (statusFilter === "in-stock" && !stock) return false;
       if (statusFilter === "out-of-stock" && stock) return false;
-      if (selectedColors.length > 0 && !selectedColors.includes(color)) return false;
-      if (min !== undefined && Number.isFinite(min) && price < min) return false;
-      if (max !== undefined && Number.isFinite(max) && price > max) return false;
+      if (selectedColors.length > 0 && !selectedColors.includes(color))
+        return false;
+      if (min !== undefined && Number.isFinite(min) && price < min)
+        return false;
+      if (max !== undefined && Number.isFinite(max) && price > max)
+        return false;
       return true;
     });
-  }, [maxPrice, minPrice, productsQuery.data?.products, selectedColors, statusFilter]);
+  }, [
+    maxPrice,
+    minPrice,
+    productsQuery.data?.products,
+    selectedColors,
+    statusFilter,
+  ]);
 
   const totalPages = pagination
     ? Math.max(1, Math.ceil(pagination.totalCount / pagination.pageSize))
@@ -182,7 +195,7 @@ export function ProductPage() {
         }}
       />
       <section className="mx-auto grid w-full max-w-7xl gap-6 px-4 lg:px-8 xl:grid-cols-[240px_minmax(0,1fr)_360px]">
-        <div className="xl:sticky xl:top-24 xl:self-start">
+        <div className="xl:sticky xl:top-32 xl:self-start">
           <FilterSidebar
             status={statusFilter}
             onStatusChange={setStatusFilter}
@@ -201,81 +214,92 @@ export function ProductPage() {
             onMaxPriceChange={setMaxPrice}
           />
         </div>
-        <div className="space-y-4">
-        <ProductSearch
-          sort={sort}
-          onSortChange={(nextSort) => {
-            updateUrl({ sort: nextSort, page: 1 });
-          }}
-          pageSize={pageSize}
-          onPageSizeChange={(nextPageSize) => {
-            updateUrl({ pageSize: nextPageSize, page: 1 });
-          }}
-          recentSearches={recentSearches}
-          onUseRecentSearch={(value) => {
-            setSearchInput(value);
-            saveRecentSearch(value);
-          }}
-          onClearFilters={() => {
-            setStatusFilter("all");
-            setSelectedColors([]);
-            setMinPrice("");
-            setMaxPrice("");
-            setSearchInput("");
-            updateUrl({
-              q: undefined,
-              sort: undefined,
-              page: 1,
-              pageSize: 10,
-            });
-          }}
-        />
-        {productsQuery.isLoading ? (
-          <ProductGridSkeleton count={pageSize} />
-        ) : null}
-        {productsQuery.error ? (
-          <ErrorState message={productsQuery.error.message} />
-        ) : null}
-        {!productsQuery.isLoading &&
-        !productsQuery.error &&
-        filteredProducts.length === 0 ? (
-          <EmptyState
-            title="Khong co san pham phu hop"
-            message="Thu doi bo loc hoac tu khoa tim kiem."
+        <div className="space-y-4 mb-4">
+          <ProductSearch
+            sort={sort}
+            onSortChange={(nextSort) => {
+              updateUrl({ sort: nextSort, page: 1 });
+            }}
+            pageSize={pageSize}
+            onPageSizeChange={(nextPageSize) => {
+              updateUrl({ pageSize: nextPageSize, page: 1 });
+            }}
+            columnsPerRow={columnsPerRow}
+            onColumnsPerRowChange={(nextCols) => {
+              updateUrl({ cols: nextCols });
+            }}
+            recentSearches={recentSearches}
+            onUseRecentSearch={(value) => {
+              setSearchInput(value);
+              saveRecentSearch(value);
+            }}
+            onClearFilters={() => {
+              setStatusFilter("all");
+              setSelectedColors([]);
+              setMinPrice("");
+              setMaxPrice("");
+              setSearchInput("");
+              updateUrl({
+                q: undefined,
+                sort: undefined,
+                page: 1,
+                pageSize: 10,
+                cols: 4,
+              });
+            }}
           />
-        ) : null}
-        {productsQuery.data ? (
-          <>
-            <div className="flex items-center justify-between text-sm text-gray-600">
-              <p>
-                Page {pagination?.page ?? page} / {totalPages}
-              </p>
-              <p>{filteredProducts.length} san pham</p>
-            </div>
-            {productsQuery.isFetching ? (
-              <ProductGridSkeleton count={pageSize} />
-            ) : (
-              <ProductList products={filteredProducts} onAdd={handleAddToCart} />
-            )}
-            <div className="flex items-center justify-end gap-2">
-              <Button
-                className="bg-gray-600 hover:bg-gray-700"
-                disabled={page <= 1 || productsQuery.isFetching}
-                onClick={() => updateUrl({ page: Math.max(1, page - 1) })}
-              >
-                Previous
-              </Button>
-              <Button
-                disabled={!pagination?.hasNextPage || productsQuery.isFetching}
-                onClick={() => updateUrl({ page: page + 1 })}
-              >
-                Next
-              </Button>
-            </div>
-          </>
-        ) : null}
-      </div>
-        <div className="xl:sticky xl:top-24 xl:self-start">
+          {productsQuery.isLoading ? (
+            <ProductGridSkeleton count={pageSize} />
+          ) : null}
+          {productsQuery.error ? (
+            <ErrorState message={productsQuery.error.message} />
+          ) : null}
+          {!productsQuery.isLoading &&
+          !productsQuery.error &&
+          filteredProducts.length === 0 ? (
+            <EmptyState
+              title="No matching products"
+              message="Try adjusting your filters or search keyword."
+            />
+          ) : null}
+          {productsQuery.data ? (
+            <>
+              <div className="flex items-center justify-between text-sm text-gray-600">
+                <p>
+                  Page {pagination?.page ?? page} / {totalPages}
+                </p>
+                <p>{filteredProducts.length} products</p>
+              </div>
+              {productsQuery.isFetching ? (
+                <ProductGridSkeleton count={pageSize} />
+              ) : (
+                <ProductList
+                  products={filteredProducts}
+                  onAdd={handleAddToCart}
+                  columnsPerRow={columnsPerRow}
+                />
+              )}
+              <div className="flex items-center justify-end gap-2">
+                <Button
+                  className="bg-gray-600 hover:bg-gray-700"
+                  disabled={page <= 1 || productsQuery.isFetching}
+                  onClick={() => updateUrl({ page: Math.max(1, page - 1) })}
+                >
+                  Previous
+                </Button>
+                <Button
+                  disabled={
+                    !pagination?.hasNextPage || productsQuery.isFetching
+                  }
+                  onClick={() => updateUrl({ page: page + 1 })}
+                >
+                  Next
+                </Button>
+              </div>
+            </>
+          ) : null}
+        </div>
+        <div className="xl:sticky xl:top-32 xl:self-start">
           <CartPanel />
         </div>
       </section>

@@ -7,6 +7,8 @@ type Props = {
   onSortChange: (value: ProductSort) => void;
   pageSize: number;
   onPageSizeChange: (value: number) => void;
+  columnsPerRow: 2 | 3 | 4;
+  onColumnsPerRowChange: (value: 2 | 3 | 4) => void;
   recentSearches: string[];
   onUseRecentSearch: (value: string) => void;
   onClearFilters: () => void;
@@ -17,48 +19,70 @@ export function ProductSearch({
   onSortChange,
   pageSize,
   onPageSizeChange,
+  columnsPerRow,
+  onColumnsPerRowChange,
   recentSearches,
   onUseRecentSearch,
   onClearFilters,
 }: Props) {
   return (
     <div className="space-y-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-      <div className="grid w-full gap-3 md:grid-cols-[220px_140px_1fr]">
-      <div>
-        <label className="mb-1 block text-sm font-semibold text-gray-700">Sort</label>
-        <select
-          value={sort}
-          onChange={(event) => onSortChange(event.target.value as ProductSort)}
-          className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-        >
-          <option value="default">Default</option>
-          <option value="price-asc">Price: Low to High</option>
-          <option value="price-desc">Price: High to Low</option>
-        </select>
-      </div>
-      <div>
-        <label className="mb-1 block text-sm font-semibold text-gray-700">
-          Page size
-        </label>
-        <select
-          value={String(pageSize)}
-          onChange={(event) => onPageSizeChange(Number(event.target.value))}
-          className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-        >
-          <option value="10">10</option>
-          <option value="20">20</option>
-          <option value="30">30</option>
-        </select>
-      </div>
-      <div className="flex items-end justify-end">
-        <button
-          type="button"
-          onClick={onClearFilters}
-          className="text-xs font-semibold text-indigo-600 hover:text-indigo-700"
-        >
-          Reset filters
-        </button>
-      </div>
+      <div className="grid w-full gap-3 md:grid-cols-[170px_80px_120px_1fr]">
+        <div>
+          <label className="mb-1 block text-sm font-semibold text-gray-700">
+            Sort
+          </label>
+          <select
+            value={sort}
+            onChange={(event) =>
+              onSortChange(event.target.value as ProductSort)
+            }
+            className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+          >
+            <option value="default">Default</option>
+            <option value="price-asc">Price: Low to High</option>
+            <option value="price-desc">Price: High to Low</option>
+          </select>
+        </div>
+        <div>
+          <label className="mb-1 block text-sm font-semibold text-gray-700">
+            Page size
+          </label>
+          <select
+            value={String(pageSize)}
+            onChange={(event) => onPageSizeChange(Number(event.target.value))}
+            className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+          >
+            <option value="10">10</option>
+            <option value="20">20</option>
+            <option value="30">30</option>
+          </select>
+        </div>
+        <div>
+          <label className="mb-1 block text-sm font-semibold text-gray-700">
+            Card / row
+          </label>
+          <select
+            value={String(columnsPerRow)}
+            onChange={(event) =>
+              onColumnsPerRowChange(Number(event.target.value) as 2 | 3 | 4)
+            }
+            className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+          >
+            <option value="2">2 cards</option>
+            <option value="3">3 cards</option>
+            <option value="4">4 cards</option>
+          </select>
+        </div>
+        <div className="flex items-end justify-end">
+          <button
+            type="button"
+            onClick={onClearFilters}
+            className="text-xs font-semibold text-indigo-600 hover:text-indigo-700"
+          >
+            Reset filters
+          </button>
+        </div>
       </div>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2">

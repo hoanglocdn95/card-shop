@@ -9,8 +9,18 @@ import { useCart } from "@/hooks/use-cart";
 import { calculateTotal } from "@/lib/order";
 
 export default function CheckoutPage() {
-  const { items, subtotal } = useCart();
+  const { items, subtotal, isReady } = useCart();
   const total = calculateTotal(items);
+
+  if (!isReady) {
+    return (
+      <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8">
+        <div className="rounded-md border border-gray-200 bg-white p-4 text-sm text-gray-500">
+          Loading checkout...
+        </div>
+      </main>
+    );
+  }
 
   if (items.length === 0) {
     return (

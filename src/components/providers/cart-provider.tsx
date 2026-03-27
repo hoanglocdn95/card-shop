@@ -16,6 +16,7 @@ import { Product } from "@/types/product";
 type CartContextValue = {
   items: CartItem[];
   subtotal: number;
+  isReady: boolean;
   addItem: (product: Product) => void;
   removeItem: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
@@ -38,21 +39,30 @@ function toCartItem(product: Product): CartItem {
 }
 
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>(() => {
-    if (typeof window === "undefined") return [];
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    try {
-      return JSON.parse(raw) as CartItem[];
-    } catch {
-      window.localStorage.removeItem(STORAGE_KEY);
-      return [];
-    }
-  });
+  const [items, setItems] = useState<CartItem[]>([]);
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (!raw) {
+      setIsReady(true);
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(raw) as CartItem[];
+      setItems(parsed);
+    } catch {
+      window.localStorage.removeItem(STORAGE_KEY);
+    } finally {
+      setIsReady(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isReady) return;
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-  }, [items]);
+  }, [isReady, items]);
 
   const value = useMemo<CartContextValue>(() => {
     const addItem = (product: Product) => {
@@ -100,12 +110,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
     return {
       items,
       subtotal,
+      isReady,
       addItem,
       removeItem,
       updateQuantity,
       clearCart,
     };
-  }, [items]);
+  }, [isReady, items]);
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }

@@ -37,9 +37,9 @@ export function FilterSidebar({
 }: Props) {
   return (
     <aside className="space-y-5 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-      <h2 className="text-xl font-semibold text-gray-900">Bo loc</h2>
+      <h2 className="text-xl font-semibold text-gray-900">Filters</h2>
       <div>
-        <h3 className="mb-2 text-sm font-semibold text-gray-800">Tinh trang</h3>
+        <h3 className="mb-2 text-sm font-semibold text-gray-800">Stock Status</h3>
         <div className="space-y-1 text-sm text-gray-600">
           <label className="flex items-center gap-2">
             <input
@@ -47,7 +47,7 @@ export function FilterSidebar({
               checked={status === "all"}
               onChange={() => onStatusChange("all")}
             />
-            Tat ca
+            All
           </label>
           <label className="flex items-center gap-2">
             <input
@@ -55,7 +55,7 @@ export function FilterSidebar({
               checked={status === "in-stock"}
               onChange={() => onStatusChange("in-stock")}
             />
-            Con hang
+            In stock
           </label>
           <label className="flex items-center gap-2">
             <input
@@ -63,12 +63,12 @@ export function FilterSidebar({
               checked={status === "out-of-stock"}
               onChange={() => onStatusChange("out-of-stock")}
             />
-            Da chay hang
+            Sold out
           </label>
         </div>
       </div>
       <div>
-        <h3 className="mb-2 text-sm font-semibold text-gray-800">Mau</h3>
+        <h3 className="mb-2 text-sm font-semibold text-gray-800">Color</h3>
         <div className="grid grid-cols-2 gap-2">
           {colors.map((color) => {
             const selected = selectedColors.includes(color);
@@ -91,18 +91,18 @@ export function FilterSidebar({
         </div>
       </div>
       <div>
-        <h3 className="mb-2 text-sm font-semibold text-gray-800">Gia</h3>
+        <h3 className="mb-2 text-sm font-semibold text-gray-800">Price</h3>
         <div className="grid grid-cols-2 gap-2">
           <input
             value={minPrice}
             onChange={(event) => onMinPriceChange(event.target.value)}
-            placeholder="Tu"
+            placeholder="Min"
             className="rounded-md border border-gray-300 px-2 py-1 text-sm"
           />
           <input
             value={maxPrice}
             onChange={(event) => onMaxPriceChange(event.target.value)}
-            placeholder="Den"
+            placeholder="Max"
             className="rounded-md border border-gray-300 px-2 py-1 text-sm"
           />
         </div>

@@ -104,16 +104,16 @@ export function CheckoutForm() {
           </span>
         </p>
         <Button type="submit" disabled={checkout.isPending || items.length === 0}>
-          {checkout.isPending ? "Đang tạo đơn..." : "Place order"}
+          {checkout.isPending ? "Creating order..." : "Place order"}
         </Button>
       </div>
       {submitStatus === "saved" ? (
         <p className="mt-2 text-xs font-medium text-green-700">
-          Đã lưu thành công, đang chuyển trang...
+          Order saved successfully, redirecting...
         </p>
       ) : null}
       {submitStatus === "submitting" ? (
-        <p className="mt-2 text-xs font-medium text-indigo-700">Đang tạo đơn...</p>
+        <p className="mt-2 text-xs font-medium text-indigo-700">Creating order...</p>
       ) : null}
       {items.length === 0 ? (
         <p className="mt-2 text-xs text-red-600">Cart must not be empty.</p>
