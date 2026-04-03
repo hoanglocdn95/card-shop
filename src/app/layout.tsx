@@ -20,9 +20,9 @@ export const metadata: Metadata = {
   title: "Card Shop Demo",
   description: "Demo app with TCG API and Google Sheets order flow",
   icons: {
-    icon: "/logo.png",
+    icon: [{ url: "/logo.png", type: "image/png" }],
     shortcut: "/logo.png",
-    apple: "/logo.png",
+    apple: [{ url: "/logo.png", type: "image/png" }],
   },
 };
 
