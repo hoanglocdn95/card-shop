@@ -8,6 +8,7 @@ type Props = {
 };
 
 export function OrderReview({ items, subtotal, total }: Props) {
+  const shipFee = Math.max(0, total - subtotal);
   return (
     <section className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
       <h2 className="text-lg font-semibold text-gray-900">Order review</h2>
@@ -28,12 +29,16 @@ export function OrderReview({ items, subtotal, total }: Props) {
           <p className="text-gray-600">Subtotal</p>
           <p className="text-gray-800">{formatCurrency(subtotal)}</p>
         </div>
+        <div className="mt-1 flex justify-between">
+          <p className="text-gray-600">Shipping</p>
+          <p className="text-gray-800">{formatCurrency(shipFee)}</p>
+        </div>
         <div className="mt-1 flex justify-between font-semibold">
-          <p className="text-gray-900">Total</p>
-          <p className="text-blue-700">{formatCurrency(total)}</p>
+          <p className="text-gray-900">Total (before discount)</p>
+          <p className="text-(--accent-teal)">{formatCurrency(total)}</p>
         </div>
       </div>
-      <div className="mt-4 rounded-lg border border-indigo-100 bg-indigo-50 p-3 text-xs text-indigo-800">
+      <div className="mt-4 rounded-lg border border-[#f7d96b] bg-[#fff9dd] p-3 text-xs text-[#7a6622]">
         We usually confirm new orders in under 2 minutes.
       </div>
     </section>

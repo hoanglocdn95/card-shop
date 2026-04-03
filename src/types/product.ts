@@ -5,9 +5,19 @@ export type Product = {
   image: string;
   price: number;
   stock?: number;
+  rarity?: string;
+  cardType?: string;
+  set?: string;
+  subtypes?: string[];
+  tcgPlayerUrl?: string;
 };
 
-export type ProductSort = "default" | "price-asc" | "price-desc";
+export type ProductSort =
+  | "relevance"
+  | "price-asc"
+  | "price-desc"
+  | "name-asc"
+  | "name-desc";
 
 export type ProductsPagination = {
   page: number;

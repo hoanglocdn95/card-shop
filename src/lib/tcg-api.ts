@@ -3,6 +3,8 @@ import axios from "axios";
 import { PRODUCT_PAGE_SIZE } from "@/constants/app";
 import { productSchema } from "@/schemas/product.schema";
 import { Product } from "@/types/product";
+import { computeVndFromUsd, getUsdVndRateGoogleLike } from "@/lib/pricing";
+import { getStockMapFromKho } from "@/lib/stock-sync";
 
 type PokemonCardsResponse = {
   page?: number;
@@ -12,8 +14,11 @@ type PokemonCardsResponse = {
   data: Array<{
     id: string;
     name: string;
+    rarity?: string;
+    subtypes?: string[];
     images?: { small?: string; large?: string };
     set?: { id?: string };
+    tcgplayer?: { url?: string };
     cardmarket?: {
       prices?: {
         averageSellPrice?: number;
@@ -42,17 +47,54 @@ type FetchProductsResult = {
   hasNextPage: boolean;
 };
 
-function mapPokemonCardToProduct(card: PokemonCardsResponse["data"][number]): Product {
+function mapPokemonCardToProduct({
+  card,
+  usdVndRate,
+  stockMap,
+}: {
+  card: PokemonCardsResponse["data"][number];
+  usdVndRate: number;
+  stockMap: Record<string, number>;
+}): Product {
+  const sku = `${card.set?.id ?? "set"}-${card.id}`;
+  const stockBySku = stockMap[sku.toUpperCase()];
+  const stockById = stockMap[String(card.id).toUpperCase()];
+  const resolvedStock =
+    typeof stockBySku === "number"
+      ? stockBySku
+      : typeof stockById === "number"
+        ? stockById
+        : getDeterministicStock(card.id);
+
+  const usdRaw =
+    card.cardmarket?.prices?.averageSellPrice ??
+    card.cardmarket?.prices?.trendPrice ??
+    0;
+  const subtypes = Array.isArray(card.subtypes)
+    ? card.subtypes.map((s) => String(s).trim()).filter(Boolean)
+    : [];
+
   const mapped = {
     id: card.id,
-    sku: `${card.set?.id ?? "set"}-${card.id}`,
+    sku,
     name: card.name,
     image: card.images?.small ?? card.images?.large ?? "",
-    price:
-      card.cardmarket?.prices?.averageSellPrice ??
-      card.cardmarket?.prices?.trendPrice ??
-      1,
-    stock: getDeterministicStock(card.id),
+    // Giá VND = tỷ giá USD/VND × 1,1 × giá USD (cardmarket)
+    price: computeVndFromUsd({
+      usd: usdRaw,
+      usdVndRate,
+      multiplier: 1.1,
+    }),
+    stock: resolvedStock,
+    rarity: (card.rarity ?? "").trim() || undefined,
+    cardType: "Card",
+    set: card.set?.id ?? "",
+    subtypes,
+    tcgPlayerUrl:
+      (card.tcgplayer?.url && String(card.tcgplayer.url).trim()) ||
+      `https://www.tcgplayer.com/search/pokemon?q=${encodeURIComponent(
+        card.name,
+      )}`,
   };
 
   return productSchema.parse(mapped);
@@ -80,12 +122,17 @@ export async function fetchProducts({
     headers["X-Api-Key"] = process.env.TCG_API_KEY;
   }
 
+  const usdVndRate = await getUsdVndRateGoogleLike();
+  const stockMap = await getStockMapFromKho();
+
   const response = await axios.get<PokemonCardsResponse>(baseUrl, {
     params,
     headers,
   });
 
-  const products = response.data.data.map(mapPokemonCardToProduct);
+  const products = response.data.data.map((card) =>
+    mapPokemonCardToProduct({ card, usdVndRate, stockMap }),
+  );
   const resolvedPage = response.data.page ?? page;
   const resolvedPageSize = response.data.pageSize ?? pageSize;
   const totalCount = response.data.totalCount ?? response.data.count ?? products.length;

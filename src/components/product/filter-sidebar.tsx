@@ -8,20 +8,22 @@ type Props = {
   colors: ProductColor[];
   selectedColors: ProductColor[];
   onToggleColor: (value: ProductColor) => void;
-  minPrice: string;
-  maxPrice: string;
-  onMinPriceChange: (value: string) => void;
-  onMaxPriceChange: (value: string) => void;
+  rarityOptions: string[];
+  selectedRarities: string[];
+  onToggleRarity: (value: string) => void;
+  subtypeOptions: string[];
+  selectedSubtypes: string[];
+  onToggleSubtype: (value: string) => void;
 };
 
 const COLOR_MAP: Record<ProductColor, string> = {
-  Black: "bg-black",
-  Red: "bg-red-500",
-  Purple: "bg-purple-500",
-  Yellow: "bg-yellow-400",
-  Blue: "bg-blue-500",
-  Green: "bg-green-500",
-  Gold: "bg-amber-500",
+  Black: "bg-[#0f172a]",
+  Red: "bg-[#FF8243]",
+  Purple: "bg-[#7c3aed]",
+  Yellow: "bg-[#FCE883]",
+  Blue: "bg-[#2563eb]",
+  Green: "bg-[#069494]",
+  Gold: "bg-[#eab308]",
 };
 
 export function FilterSidebar({
@@ -30,14 +32,16 @@ export function FilterSidebar({
   colors,
   selectedColors,
   onToggleColor,
-  minPrice,
-  maxPrice,
-  onMinPriceChange,
-  onMaxPriceChange,
+  rarityOptions,
+  selectedRarities,
+  onToggleRarity,
+  subtypeOptions,
+  selectedSubtypes,
+  onToggleSubtype,
 }: Props) {
   return (
-    <aside className="space-y-5 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-      <h2 className="text-xl font-semibold text-gray-900">Filters</h2>
+    <aside className="space-y-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+      <h2 className="text-lg font-semibold text-gray-900">Filters</h2>
       <div>
         <h3 className="mb-2 text-sm font-semibold text-gray-800">Stock Status</h3>
         <div className="space-y-1 text-sm text-gray-600">
@@ -79,7 +83,7 @@ export function FilterSidebar({
                 onClick={() => onToggleColor(color)}
                 className={`flex items-center gap-2 rounded-md border px-2 py-1 text-xs ${
                   selected
-                    ? "border-indigo-500 bg-indigo-50 text-indigo-700"
+                    ? "border-(--accent-teal) bg-[#e7f8f8] text-[#046969]"
                     : "border-gray-200 text-gray-600"
                 }`}
               >
@@ -90,23 +94,40 @@ export function FilterSidebar({
           })}
         </div>
       </div>
-      <div>
-        <h3 className="mb-2 text-sm font-semibold text-gray-800">Price</h3>
-        <div className="grid grid-cols-2 gap-2">
-          <input
-            value={minPrice}
-            onChange={(event) => onMinPriceChange(event.target.value)}
-            placeholder="Min"
-            className="rounded-md border border-gray-300 px-2 py-1 text-sm"
-          />
-          <input
-            value={maxPrice}
-            onChange={(event) => onMaxPriceChange(event.target.value)}
-            placeholder="Max"
-            className="rounded-md border border-gray-300 px-2 py-1 text-sm"
-          />
+      {rarityOptions.length > 0 ? (
+        <div>
+          <h3 className="mb-2 text-sm font-semibold text-gray-800">Rarity</h3>
+          <div className="max-h-40 space-y-1 overflow-y-auto text-sm text-gray-600">
+            {rarityOptions.map((r) => (
+              <label key={r} className="flex cursor-pointer items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={selectedRarities.includes(r)}
+                  onChange={() => onToggleRarity(r)}
+                />
+                <span className="leading-tight">{r}</span>
+              </label>
+            ))}
+          </div>
         </div>
-      </div>
+      ) : null}
+      {subtypeOptions.length > 0 ? (
+        <div>
+          <h3 className="mb-2 text-sm font-semibold text-gray-800">Subtype(s)</h3>
+          <div className="max-h-40 space-y-1 overflow-y-auto text-sm text-gray-600">
+            {subtypeOptions.map((s) => (
+              <label key={s} className="flex cursor-pointer items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={selectedSubtypes.includes(s)}
+                  onChange={() => onToggleSubtype(s)}
+                />
+                <span className="leading-tight">{s}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+      ) : null}
     </aside>
   );
 }

@@ -3,6 +3,11 @@
 :root {
   --background: #f5f7fb;
   --foreground: #111827;
+  --primary: #ff8243;
+  --primary-hover: #e86f33;
+  --accent-pink: #ffc0cb;
+  --accent-yellow: #fce883;
+  --accent-teal: #069494;
 }
 
 body {

@@ -19,7 +19,7 @@ export function CartSummary({ subtotal, itemCount }: Props) {
         </p>
       </div>
       <Link href="/checkout" className="mt-3 block">
-        <Button className="w-full bg-indigo-600 hover:bg-indigo-700">
+        <Button className="w-full bg-(--primary) hover:bg-(--primary-hover)">
           Go to checkout
         </Button>
       </Link>

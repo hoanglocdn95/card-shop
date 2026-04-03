@@ -62,3 +62,13 @@ function toIsoString_(value) {
 function sanitizeString_(value) {
   return String(value == null ? "" : value).trim();
 }
+
+/** VND display string aligned with the shop (vi-VN, ₫, no decimals). */
+function formatVnd_(value) {
+  const n = toNumber_(value, 0);
+  return new Intl.NumberFormat("vi-VN", {
+    style: "currency",
+    currency: "VND",
+    maximumFractionDigits: 0,
+  }).format(n);
+}

@@ -24,8 +24,8 @@ import {
 import { useProducts } from "@/hooks/use-products";
 import { ProductSort, ProductsQueryResponse } from "@/types/product";
 
-const RECENT_SEARCHES_KEY = "card-shop-recent-searches";
-const MAX_RECENT_SEARCHES = 6;
+const FACEBOOK_NAME_KEY = "card-shop-facebook-name";
+const SEARCH_DEBOUNCE_MS = 500;
 
 function useDebouncedValue(value: string, delay = 400) {
   const [debounced, setDebounced] = useState(value);
@@ -45,19 +45,23 @@ export function ProductPage() {
   const queryFromUrl = searchParams.get("q") ?? "";
   const pageParam = Number(searchParams.get("page") ?? "1");
   const page = Number.isFinite(pageParam) && pageParam > 0 ? pageParam : 1;
-  const pageSizeParam = Number(searchParams.get("pageSize") ?? "10");
-  const pageSize = [10, 20, 30].includes(pageSizeParam) ? pageSizeParam : 10;
+  const pageSizeParam = Number(searchParams.get("pageSize") ?? "50");
+  const pageSize = [50, 100].includes(pageSizeParam) ? pageSizeParam : 50;
   const colsParam = Number(searchParams.get("cols") ?? "4");
   const columnsPerRow: 2 | 3 | 4 = [2, 3, 4].includes(colsParam)
     ? (colsParam as 2 | 3 | 4)
     : 4;
   const sortParam = searchParams.get("sort");
   const sort: ProductSort =
-    sortParam === "price-asc" || sortParam === "price-desc"
+    sortParam === "price-asc" ||
+    sortParam === "price-desc" ||
+    sortParam === "name-asc" ||
+    sortParam === "name-desc" ||
+    sortParam === "relevance"
       ? sortParam
-      : "default";
+      : "relevance";
   const [searchInput, setSearchInput] = useState(queryFromUrl);
-  const debouncedQuery = useDebouncedValue(searchInput);
+  const debouncedQuery = useDebouncedValue(searchInput, SEARCH_DEBOUNCE_MS);
   const productsQuery = useProducts({
     query: debouncedQuery,
     page,
@@ -71,19 +75,27 @@ export function ProductPage() {
     "all" | "in-stock" | "out-of-stock"
   >("all");
   const [selectedColors, setSelectedColors] = useState<ProductColor[]>([]);
-  const [minPrice, setMinPrice] = useState("");
-  const [maxPrice, setMaxPrice] = useState("");
-  const [recentSearches, setRecentSearches] = useState<string[]>(() => {
-    if (typeof window === "undefined") return [];
-    const raw = window.localStorage.getItem(RECENT_SEARCHES_KEY);
-    if (!raw) return [];
-    try {
-      return JSON.parse(raw) as string[];
-    } catch {
-      window.localStorage.removeItem(RECENT_SEARCHES_KEY);
-      return [];
+  const [selectedRarities, setSelectedRarities] = useState<string[]>([]);
+  const [selectedSubtypes, setSelectedSubtypes] = useState<string[]>([]);
+
+  /** Draft while typing — must NOT close the gate until user clicks Next. */
+  const [facebookDraft, setFacebookDraft] = useState("");
+  /** Only flips true after Next (or if a saved name already exists in localStorage). */
+  const [facebookGatePassed, setFacebookGatePassed] = useState(false);
+  const [isFacebookResolved, setIsFacebookResolved] = useState(false);
+
+  useEffect(() => {
+    const raw = window.localStorage.getItem(FACEBOOK_NAME_KEY);
+    const saved = (raw ?? "").trim();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setFacebookDraft(raw ?? "");
+    if (saved) {
+      setFacebookGatePassed(true);
     }
-  });
+    setIsFacebookResolved(true);
+  }, []);
+
+  const showFacebookModal = isFacebookResolved && !facebookGatePassed;
 
   const updateUrl = useCallback(
     (updates: Record<string, string | number | undefined>) => {
@@ -103,22 +115,10 @@ export function ProductPage() {
     [pathname, router, searchParams],
   );
 
-  const saveRecentSearch = (value: string) => {
-    const normalized = value.trim();
-    if (!normalized || normalized.length < 2) return;
-    setRecentSearches((prev) => {
-      const next = [
-        normalized,
-        ...prev.filter((item) => item !== normalized),
-      ].slice(0, MAX_RECENT_SEARCHES);
-      window.localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(next));
-      return next;
-    });
-  };
-
   useEffect(() => {
-    if (debouncedQuery === queryFromUrl) return;
-    updateUrl({ q: debouncedQuery, page: 1 });
+    if (debouncedQuery !== queryFromUrl) {
+      updateUrl({ q: debouncedQuery, page: 1 });
+    }
   }, [debouncedQuery, queryFromUrl, updateUrl]);
 
   useEffect(() => {
@@ -148,30 +148,61 @@ export function ProductPage() {
 
   const pagination = productsQuery.data?.pagination;
   const allColorOptions = getProductColorOptions();
+
+  const { rarityOptions, subtypeOptions } = useMemo(() => {
+    const products = productsQuery.data?.products ?? [];
+    const rSet = new Set<string>();
+    const sSet = new Set<string>();
+    for (const p of products) {
+      const r = p.rarity?.trim();
+      if (r) rSet.add(r);
+      for (const st of p.subtypes ?? []) {
+        const t = String(st).trim();
+        if (t) sSet.add(t);
+      }
+    }
+    return {
+      rarityOptions: [...rSet].sort((a, b) => a.localeCompare(b)),
+      subtypeOptions: [...sSet].sort((a, b) => a.localeCompare(b)),
+    };
+  }, [productsQuery.data?.products]);
+
   const filteredProducts = useMemo(() => {
-    const min = minPrice ? Number(minPrice) : undefined;
-    const max = maxPrice ? Number(maxPrice) : undefined;
+    const keyword = debouncedQuery.trim().toLowerCase();
 
     return (productsQuery.data?.products ?? []).filter((product) => {
       const stock = isInStock(product);
       const color = getProductColor(product);
-      const price = product.price;
+      const rarity = product.rarity?.trim() ?? "";
+      const subtypes = product.subtypes ?? [];
 
       if (statusFilter === "in-stock" && !stock) return false;
       if (statusFilter === "out-of-stock" && stock) return false;
       if (selectedColors.length > 0 && !selectedColors.includes(color))
         return false;
-      if (min !== undefined && Number.isFinite(min) && price < min)
+      if (
+        selectedRarities.length > 0 &&
+        (!rarity || !selectedRarities.includes(rarity))
+      )
         return false;
-      if (max !== undefined && Number.isFinite(max) && price > max)
+      if (selectedSubtypes.length > 0) {
+        const matchSubtype = selectedSubtypes.some((s) => subtypes.includes(s));
+        if (!matchSubtype) return false;
+      }
+      if (
+        keyword &&
+        !product.name.toLowerCase().includes(keyword) &&
+        !product.sku.toLowerCase().includes(keyword)
+      )
         return false;
       return true;
     });
   }, [
-    maxPrice,
-    minPrice,
+    debouncedQuery,
     productsQuery.data?.products,
     selectedColors,
+    selectedRarities,
+    selectedSubtypes,
     statusFilter,
   ]);
 
@@ -185,17 +216,64 @@ export function ProductPage() {
     showToast("Added to cart");
   };
 
+  if (showFacebookModal) {
+    return (
+      <div className="fixed inset-0 z-50 min-h-dvh bg-[var(--background)]">
+        <div className="mx-auto flex min-h-dvh max-w-md items-center px-4 py-10">
+          <div className="w-full rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+            <div className="space-y-2">
+              <h2 className="text-base font-semibold text-gray-900">
+                Facebook name
+              </h2>
+              <p className="text-sm text-gray-600">
+                Please enter your Facebook name to access the shop.
+              </p>
+            </div>
+
+            <div className="mt-4 space-y-2">
+              <label className="text-sm font-medium text-gray-900">
+                Your Facebook name
+              </label>
+              <input
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-(--accent-teal) focus:ring-2 focus:ring-[#d8f3f3]"
+                value={facebookDraft}
+                onChange={(e) => setFacebookDraft(e.target.value)}
+                placeholder="e.g. John Smith"
+                name="facebook-name"
+                autoComplete="name"
+              />
+              <Button
+                type="button"
+                className="w-full bg-(--primary) hover:bg-(--primary-hover)"
+                onClick={() => {
+                  const trimmed = facebookDraft.trim();
+                  if (!trimmed) return;
+                  window.localStorage.setItem(FACEBOOK_NAME_KEY, trimmed);
+                  setFacebookGatePassed(true);
+                }}
+                disabled={!facebookDraft.trim()}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6">
-      <ShopHeader
-        searchValue={searchInput}
-        onSearchChange={(nextValue) => {
-          setSearchInput(nextValue);
-          saveRecentSearch(nextValue);
-        }}
-      />
-      <section className="mx-auto grid w-full max-w-7xl gap-6 px-4 lg:px-8 xl:grid-cols-[240px_minmax(0,1fr)_360px]">
-        <div className="xl:sticky xl:top-32 xl:self-start">
+    <div className="flex w-full min-h-dvh flex-col overflow-x-hidden bg-[var(--background)] xl:h-dvh xl:max-h-dvh xl:overflow-hidden">
+      <div className="shrink-0">
+        <ShopHeader
+          searchValue={searchInput}
+          onSearchChange={(nextValue) => {
+            setSearchInput(nextValue);
+          }}
+        />
+      </div>
+      <section className="mx-auto grid min-h-0 w-full max-w-none flex-1 gap-4 px-4 py-3 sm:px-5 sm:py-4 lg:px-8 xl:grid-cols-[minmax(200px,260px)_minmax(0,1fr)_minmax(300px,420px)] xl:grid-rows-[minmax(0,1fr)] xl:gap-6 xl:overflow-hidden xl:py-0 xl:pb-3 xl:pt-2 2xl:px-10">
+        <div className="min-h-0 overflow-y-auto overscroll-contain xl:pr-1">
           <FilterSidebar
             status={statusFilter}
             onStatusChange={setStatusFilter}
@@ -208,98 +286,112 @@ export function ProductPage() {
                   : [...prev, value],
               );
             }}
-            minPrice={minPrice}
-            maxPrice={maxPrice}
-            onMinPriceChange={setMinPrice}
-            onMaxPriceChange={setMaxPrice}
+            rarityOptions={rarityOptions}
+            selectedRarities={selectedRarities}
+            onToggleRarity={(value) => {
+              setSelectedRarities((prev) =>
+                prev.includes(value)
+                  ? prev.filter((item) => item !== value)
+                  : [...prev, value],
+              );
+            }}
+            subtypeOptions={subtypeOptions}
+            selectedSubtypes={selectedSubtypes}
+            onToggleSubtype={(value) => {
+              setSelectedSubtypes((prev) =>
+                prev.includes(value)
+                  ? prev.filter((item) => item !== value)
+                  : [...prev, value],
+              );
+            }}
           />
         </div>
-        <div className="space-y-4 mb-4">
-          <ProductSearch
-            sort={sort}
-            onSortChange={(nextSort) => {
-              updateUrl({ sort: nextSort, page: 1 });
-            }}
-            pageSize={pageSize}
-            onPageSizeChange={(nextPageSize) => {
-              updateUrl({ pageSize: nextPageSize, page: 1 });
-            }}
-            columnsPerRow={columnsPerRow}
-            onColumnsPerRowChange={(nextCols) => {
-              updateUrl({ cols: nextCols });
-            }}
-            recentSearches={recentSearches}
-            onUseRecentSearch={(value) => {
-              setSearchInput(value);
-              saveRecentSearch(value);
-            }}
-            onClearFilters={() => {
-              setStatusFilter("all");
-              setSelectedColors([]);
-              setMinPrice("");
-              setMaxPrice("");
-              setSearchInput("");
-              updateUrl({
-                q: undefined,
-                sort: undefined,
-                page: 1,
-                pageSize: 10,
-                cols: 4,
-              });
-            }}
-          />
-          {productsQuery.isLoading ? (
-            <ProductGridSkeleton count={pageSize} />
-          ) : null}
-          {productsQuery.error ? (
-            <ErrorState message={productsQuery.error.message} />
-          ) : null}
-          {!productsQuery.isLoading &&
-          !productsQuery.error &&
-          filteredProducts.length === 0 ? (
-            <EmptyState
-              title="No matching products"
-              message="Try adjusting your filters or search keyword."
+        <div className="flex min-h-0 min-w-0 flex-col gap-0 overflow-hidden xl:h-full">
+          <div className="sticky top-[7.5rem] z-20 shrink-0 border-b border-gray-200/80 bg-[var(--background)] pb-3 pt-1 xl:static xl:z-auto xl:border-0 xl:pb-2 xl:pt-0">
+            <ProductSearch
+              sort={sort}
+              onSortChange={(nextSort) => {
+                updateUrl({ sort: nextSort, page: 1 });
+              }}
+              pageSize={pageSize}
+              onPageSizeChange={(nextPageSize) => {
+                updateUrl({ pageSize: nextPageSize, page: 1 });
+              }}
+              columnsPerRow={columnsPerRow}
+              onColumnsPerRowChange={(nextCols) => {
+                updateUrl({ cols: nextCols });
+              }}
+              page={pagination?.page ?? page}
+              totalPages={totalPages}
+              resultCount={filteredProducts.length}
+              onClearFilters={() => {
+                setStatusFilter("all");
+                setSelectedColors([]);
+                setSelectedRarities([]);
+                setSelectedSubtypes([]);
+                setSearchInput("");
+                updateUrl({
+                  q: undefined,
+                  sort: undefined,
+                  page: 1,
+                  pageSize: 50,
+                  cols: 4,
+                });
+              }}
             />
-          ) : null}
+          </div>
+
+          <div className="min-h-0 space-y-4 py-4 xl:flex-1 xl:overflow-y-auto xl:overscroll-contain xl:py-3">
+            {productsQuery.isLoading ? (
+              <ProductGridSkeleton count={pageSize} />
+            ) : null}
+            {productsQuery.error ? (
+              <ErrorState message={productsQuery.error.message} />
+            ) : null}
+            {!productsQuery.isLoading &&
+            !productsQuery.error &&
+            filteredProducts.length === 0 ? (
+              <EmptyState
+                title="No matching products"
+                message="Try adjusting your filters or search keyword."
+              />
+            ) : null}
+            {productsQuery.data ? (
+              <>
+                {productsQuery.isFetching ? (
+                  <ProductGridSkeleton count={pageSize} />
+                ) : (
+                  <ProductList
+                    products={filteredProducts}
+                    onAdd={handleAddToCart}
+                    columnsPerRow={columnsPerRow}
+                  />
+                )}
+              </>
+            ) : null}
+          </div>
+
           {productsQuery.data ? (
-            <>
-              <div className="flex items-center justify-between text-sm text-gray-600">
-                <p>
-                  Page {pagination?.page ?? page} / {totalPages}
-                </p>
-                <p>{filteredProducts.length} products</p>
-              </div>
-              {productsQuery.isFetching ? (
-                <ProductGridSkeleton count={pageSize} />
-              ) : (
-                <ProductList
-                  products={filteredProducts}
-                  onAdd={handleAddToCart}
-                  columnsPerRow={columnsPerRow}
-                />
-              )}
-              <div className="flex items-center justify-end gap-2">
-                <Button
-                  className="bg-gray-600 hover:bg-gray-700"
-                  disabled={page <= 1 || productsQuery.isFetching}
-                  onClick={() => updateUrl({ page: Math.max(1, page - 1) })}
-                >
-                  Previous
-                </Button>
-                <Button
-                  disabled={
-                    !pagination?.hasNextPage || productsQuery.isFetching
-                  }
-                  onClick={() => updateUrl({ page: page + 1 })}
-                >
-                  Next
-                </Button>
-              </div>
-            </>
+            <div className="sticky bottom-0 z-20 flex justify-end gap-2 border-t border-gray-200 bg-[var(--background)] py-3 shadow-[0_-6px_16px_-8px_rgba(15,23,42,0.12)] xl:static xl:shrink-0 xl:shadow-none">
+              <Button
+                className="bg-gray-600 hover:bg-gray-700"
+                disabled={page <= 1 || productsQuery.isFetching}
+                onClick={() => updateUrl({ page: Math.max(1, page - 1) })}
+              >
+                Previous
+              </Button>
+              <Button
+                disabled={
+                  !pagination?.hasNextPage || productsQuery.isFetching
+                }
+                onClick={() => updateUrl({ page: page + 1 })}
+              >
+                Next
+              </Button>
+            </div>
           ) : null}
         </div>
-        <div className="xl:sticky xl:top-32 xl:self-start">
+        <div className="flex min-h-0 min-w-0 flex-col overflow-hidden xl:h-full">
           <CartPanel />
         </div>
       </section>

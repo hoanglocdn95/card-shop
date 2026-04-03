@@ -3,25 +3,26 @@ import { google } from "googleapis";
 import {
   ORDER_ITEMS_SHEET_NAME,
   ORDERS_SHEET_NAME,
-  ORDER_STATUS,
 } from "@/constants/order";
 import {
   getServerEnv,
   hasGoogleSheetsCredentials,
   shouldBypassGoogleSheetsInDev,
 } from "@/lib/env";
-import { CartItem } from "@/types/cart";
-
+import { formatVndForSheet } from "@/lib/utils";
 export type AppendOrderInput = {
   orderCode: string;
-  customerName: string;
-  phone: string;
-  address: string;
+  facebookName: string;
   note?: string;
-  subtotal: number;
   total: number;
   createdAt: string;
-  items: CartItem[];
+  items: Array<{
+    productName: string;
+    price: number;
+    quantity: number;
+    rarity?: string;
+    lineTotal: number;
+  }>;
 };
 
 export async function appendOrderToGoogleSheets(input: AppendOrderInput) {
@@ -55,20 +56,16 @@ export async function appendOrderToGoogleSheets(input: AppendOrderInput) {
 
   await sheets.spreadsheets.values.append({
     spreadsheetId: env.GOOGLE_SHEET_ID,
-    range: `${ORDERS_SHEET_NAME}!A:I`,
+    range: `${ORDERS_SHEET_NAME}!A:E`,
     valueInputOption: "USER_ENTERED",
     requestBody: {
       values: [
         [
           input.orderCode,
           input.createdAt,
-          input.customerName,
-          input.phone,
-          input.address,
+          input.facebookName,
           input.note ?? "",
-          input.subtotal,
-          input.total,
-          ORDER_STATUS.confirmed,
+          formatVndForSheet(input.total),
         ],
       ],
     },
@@ -82,11 +79,11 @@ export async function appendOrderToGoogleSheets(input: AppendOrderInput) {
       requestBody: {
         values: input.items.map((item) => [
           input.orderCode,
-          item.productId,
-          item.name,
-          item.price,
+          item.productName,
+          formatVndForSheet(item.price),
           item.quantity,
-          item.lineTotal,
+          item.rarity ?? "",
+          formatVndForSheet(item.lineTotal),
         ]),
       },
     });

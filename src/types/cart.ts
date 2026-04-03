@@ -6,4 +6,5 @@ export type CartItem = {
   price: number;
   quantity: number;
   lineTotal: number;
+  rarity?: string;
 };

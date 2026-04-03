@@ -6,6 +6,7 @@ function setupCardShopSheets() {
   const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
   ensureTabAndHeader_(spreadsheet, CONFIG.SHEETS.ORDERS);
   ensureTabAndHeader_(spreadsheet, CONFIG.SHEETS.ORDER_ITEMS);
+  ensureTabAndHeader_(spreadsheet, CONFIG.SHEETS.KHO);
   SpreadsheetApp.flush();
   return { ok: true, message: "Sheets are ready." };
 }

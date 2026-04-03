@@ -2,8 +2,8 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
-import { useState } from "react";
+import { useForm, useWatch } from "react-hook-form";
+import { useEffect, useState } from "react";
 import { z } from "zod";
 
 import { Button } from "@/components/common/button";
@@ -11,45 +11,99 @@ import { ErrorState } from "@/components/common/error-state";
 import { Input } from "@/components/common/input";
 import { useCart } from "@/hooks/use-cart";
 import { useCheckout } from "@/hooks/use-checkout";
-import { calculateTotal } from "@/lib/order";
+import { parseDiscountCode } from "@/lib/discount";
+import { roundUpToNearestThousandPublic } from "@/lib/pricing";
 import { formatCurrency } from "@/lib/utils";
 import { orderSchema } from "@/schemas/order.schema";
 
-const customerSchema = orderSchema.omit({ items: true });
-type CustomerFormInput = z.infer<typeof customerSchema>;
+const FACEBOOK_NAME_KEY = "card-shop-facebook-name";
+const SHIP_FEE_VND = 35000;
+
+const confirmSchema = z.object({
+  note: z.string().optional(),
+  discountCode: z.string().optional(),
+});
+
+type ConfirmInput = z.infer<typeof confirmSchema>;
 
 export function CheckoutForm() {
   const router = useRouter();
   const { items, subtotal, clearCart } = useCart();
   const checkout = useCheckout();
-  const [submitStatus, setSubmitStatus] = useState<
-    "idle" | "submitting" | "saved"
-  >("idle");
+  const [facebookName, setFacebookName] = useState("");
+  const [submitStatus, setSubmitStatus] = useState<"idle" | "saving">(
+    "idle",
+  );
 
-  const form = useForm<CustomerFormInput>({
-    resolver: zodResolver(customerSchema),
+  const form = useForm<ConfirmInput>({
+    resolver: zodResolver(confirmSchema),
     defaultValues: {
-      customerName: "",
-      phone: "",
-      address: "",
       note: "",
+      discountCode: "",
     },
   });
 
+  useEffect(() => {
+    const raw = window.localStorage.getItem(FACEBOOK_NAME_KEY);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setFacebookName(raw ?? "");
+  }, []);
+
+  const watchedDiscountCode = useWatch({
+    control: form.control,
+    name: "discountCode",
+  });
+  const discount = parseDiscountCode(watchedDiscountCode ?? undefined);
+
+  const preview = (() => {
+    const beforeDiscountSubtotal = subtotal;
+    if (discount.type === "none") {
+      return {
+        total: roundUpToNearestThousandPublic(
+          beforeDiscountSubtotal + SHIP_FEE_VND,
+        ),
+      };
+    }
+    if (discount.type === "percent") {
+      const discountedSubtotal =
+        beforeDiscountSubtotal * (1 - discount.value / 100);
+      return {
+        total: roundUpToNearestThousandPublic(
+          discountedSubtotal + SHIP_FEE_VND,
+        ),
+      };
+    }
+    // fixed VND amount subtract from total bill
+    const discounted =
+      beforeDiscountSubtotal + SHIP_FEE_VND - discount.value;
+    return {
+      total: roundUpToNearestThousandPublic(Math.max(0, discounted)),
+    };
+  })();
+
   const onSubmit = form.handleSubmit(async (values) => {
+    if (!facebookName.trim()) return;
     try {
-      setSubmitStatus("submitting");
+      setSubmitStatus("saving");
       const payload = orderSchema.parse({
-        ...values,
-        items,
+        facebookName: facebookName.trim(),
+        note: values.note?.trim() ? values.note.trim() : undefined,
+        discountCode: values.discountCode?.trim()
+          ? values.discountCode.trim()
+          : undefined,
+        items: items.map((item) => ({
+          productName: item.name,
+          price: item.price,
+          quantity: item.quantity,
+          rarity: item.rarity,
+        })),
       });
 
       const response = await checkout.mutateAsync(payload);
-      setSubmitStatus("saved");
       clearCart();
       await new Promise((resolve) => window.setTimeout(resolve, 650));
       router.push(
-        `/success?orderCode=${encodeURIComponent(response.orderCode)}&total=${response.total}&customerName=${encodeURIComponent(response.customerName)}&createdAt=${encodeURIComponent(response.createdAt)}`,
+        `/success?orderCode=${encodeURIComponent(response.orderCode)}&total=${response.total}&facebookName=${encodeURIComponent(response.facebookName)}&createdAt=${encodeURIComponent(response.createdAt)}`,
       );
     } catch {
       setSubmitStatus("idle");
@@ -59,34 +113,40 @@ export function CheckoutForm() {
   return (
     <form
       onSubmit={onSubmit}
-      className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm"
+      className="relative rounded-xl border border-gray-200 bg-white p-5 shadow-sm"
     >
-      <h2 className="text-lg font-semibold text-gray-900">Customer info</h2>
-      <div className="mt-3 grid gap-3">
+      <h2 className="text-lg font-semibold text-gray-900">Checkout</h2>
+      <p className="mt-1 text-sm text-gray-600">
+        Please confirm once more and add your note.
+      </p>
+
+      <div className="mt-4 grid gap-3">
         <div>
-          <label className="mb-1 block text-sm font-semibold">Customer name</label>
-          <Input {...form.register("customerName")} disabled={checkout.isPending} />
-          <p className="mt-1 text-xs text-red-600">
-            {form.formState.errors.customerName?.message}
-          </p>
+          <label className="mb-1 block text-sm font-semibold">Facebook name</label>
+          <Input value={facebookName} disabled />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-semibold">Phone</label>
-          <Input {...form.register("phone")} disabled={checkout.isPending} />
-          <p className="mt-1 text-xs text-red-600">
-            {form.formState.errors.phone?.message}
-          </p>
-        </div>
-        <div>
-          <label className="mb-1 block text-sm font-semibold">Address</label>
-          <Input {...form.register("address")} disabled={checkout.isPending} />
-          <p className="mt-1 text-xs text-red-600">
-            {form.formState.errors.address?.message}
-          </p>
+          <label className="mb-1 block text-sm font-semibold">Discount code</label>
+          <Input {...form.register("discountCode")} disabled={checkout.isPending} placeholder="Optional" />
         </div>
         <div>
           <label className="mb-1 block text-sm font-semibold">Note</label>
-          <Input {...form.register("note")} disabled={checkout.isPending} />
+          <Input {...form.register("note")} disabled={checkout.isPending} placeholder="Optional" />
+        </div>
+      </div>
+
+      <div className="mt-4 border-t border-gray-200 pt-3 text-sm">
+        <div className="flex justify-between text-gray-600">
+          <span>Subtotal</span>
+          <span>{formatCurrency(subtotal)}</span>
+        </div>
+        <div className="mt-1 flex justify-between text-gray-600">
+          <span>Shipping</span>
+          <span>{formatCurrency(SHIP_FEE_VND)}</span>
+        </div>
+        <div className="mt-2 flex justify-between font-semibold text-gray-900">
+          <span>Total</span>
+          <span className="text-(--accent-teal)">{formatCurrency(preview.total)}</span>
         </div>
       </div>
 
@@ -96,37 +156,20 @@ export function CheckoutForm() {
         </div>
       ) : null}
 
-      <div className="mt-4 flex items-center justify-between">
-        <p className="text-sm text-gray-600">
-          Total:{" "}
-          <span className="font-semibold text-gray-900">
-            {formatCurrency(calculateTotal(items))}
-          </span>
-        </p>
-        <Button type="submit" disabled={checkout.isPending || items.length === 0}>
-          {checkout.isPending ? "Creating order..." : "Place order"}
+      {items.length === 0 ? (
+        <p className="mt-3 text-xs text-[#8a2d49]">Cart must not be empty.</p>
+      ) : null}
+
+      <div className="mt-4 flex items-center justify-end gap-2">
+        <Button
+          type="submit"
+          disabled={checkout.isPending || items.length === 0 || !facebookName.trim() || submitStatus === "saving"}
+        >
+          {checkout.isPending || submitStatus === "saving"
+            ? "Confirming..."
+            : "Confirm"}
         </Button>
       </div>
-      {submitStatus === "saved" ? (
-        <p className="mt-2 text-xs font-medium text-green-700">
-          Order saved successfully, redirecting...
-        </p>
-      ) : null}
-      {submitStatus === "submitting" ? (
-        <p className="mt-2 text-xs font-medium text-indigo-700">Creating order...</p>
-      ) : null}
-      {items.length === 0 ? (
-        <p className="mt-2 text-xs text-red-600">Cart must not be empty.</p>
-      ) : null}
-      <p className="mt-1 text-xs text-gray-500">
-        Subtotal: {formatCurrency(subtotal)}
-      </p>
-      <p className="mt-1 text-xs text-gray-500">
-        Estimated confirmation time: under 2 minutes.
-      </p>
-      <p className="mt-1 text-xs text-gray-500">
-        Need help? Contact support at support@cardshop.demo
-      </p>
     </form>
   );
 }

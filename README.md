@@ -60,7 +60,7 @@ cp .env.example .env.local
 npm run dev
 ```
 
-App mac dinh chay tai [http://localhost:3000](http://localhost:3000).
+App mac dinh chay tai [http://localhost:3002](http://localhost:3002).
 
 ## Local mock fallback
 
@@ -111,3 +111,53 @@ Neu ban tach theo 5 file, noi dung `docs/google-sheets-setup.gs` se dat vao `Set
   - `APPS_SCRIPT_WEB_APP_URL=<url web app da deploy>`
   - `APPS_SCRIPT_TOKEN=<token ban dat trong script>`
 - Luc nay khong bat buoc Service Account de ghi order nua.
+
+## Deploy len Cloudflare Workers (OpenNext)
+
+Project da duoc setup san OpenNext Cloudflare adapter.
+
+### 1) Kiem tra local build cho Cloudflare
+
+```bash
+npx opennextjs-cloudflare build
+```
+
+### 2) Dang nhap Cloudflare
+
+```bash
+npx wrangler login
+```
+
+### 3) Dat secret tren Cloudflare Worker
+
+Can set tat ca bien moi truong dang dung o `.env.local`.
+Vi du:
+
+```bash
+npx wrangler secret put TCG_API_BASE_URL
+npx wrangler secret put TCG_API_KEY
+npx wrangler secret put ORDER_STORAGE_PROVIDER
+npx wrangler secret put APPS_SCRIPT_WEB_APP_URL
+npx wrangler secret put APPS_SCRIPT_TOKEN
+npx wrangler secret put BYPASS_GOOGLE_SHEETS_IN_DEV
+```
+
+Neu ban dung provider `googleapis` thi set them:
+
+```bash
+npx wrangler secret put GOOGLE_CLIENT_EMAIL
+npx wrangler secret put GOOGLE_PRIVATE_KEY
+npx wrangler secret put GOOGLE_SHEET_ID
+```
+
+### 4) Deploy
+
+```bash
+npm run deploy
+```
+
+### 5) Preview local bang runtime Cloudflare
+
+```bash
+npm run preview
+```

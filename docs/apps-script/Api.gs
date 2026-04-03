@@ -22,6 +22,11 @@ function doGet(e) {
       return jsonSuccess_(result);
     }
 
+    if (action === "listStock") {
+      const stocks = listStocks_();
+      return jsonSuccess_({ stocks: stocks });
+    }
+
     return jsonError_("Invalid action for GET", "INVALID_ACTION");
   } catch (err) {
     return jsonError_(err.message, "GET_FAILED");

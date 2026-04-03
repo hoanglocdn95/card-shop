@@ -5,25 +5,25 @@ const CONFIG = {
       headers: [
         "orderCode",
         "createdAt",
-        "customerName",
-        "phone",
-        "address",
+        "facebookName",
         "note",
-        "subtotal",
         "total",
-        "status",
       ],
     },
     ORDER_ITEMS: {
       name: "OrderItems",
       headers: [
         "orderCode",
-        "productId",
         "productName",
         "price",
         "quantity",
+        "rarity",
         "lineTotal",
       ],
+    },
+    KHO: {
+      name: "Kho",
+      headers: ["key", "stock"],
     },
   },
   STYLE: {
@@ -42,9 +42,6 @@ const CONFIG = {
     ],
     ODD_ROW_COLOR: "#FFFFFF",
     EVEN_ROW_COLOR: "#F8FAFC",
-  },
-  STATUS: {
-    CONFIRMED: "CONFIRMED",
   },
   SCRIPT_PROPERTIES: {
     API_TOKEN: "API_TOKEN",

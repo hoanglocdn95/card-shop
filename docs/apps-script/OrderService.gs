@@ -8,42 +8,45 @@ function createOrder_(payload) {
 
   const orderCode = sanitizeString_(payload.orderCode);
   const createdAt = sanitizeString_(payload.createdAt) || new Date().toISOString();
-  const customerName = sanitizeString_(payload.customerName);
-  const phone = sanitizeString_(payload.phone);
-  const address = sanitizeString_(payload.address);
+  const facebookName = sanitizeString_(payload.facebookName);
   const note = sanitizeString_(payload.note);
-  const status = sanitizeString_(payload.status) || CONFIG.STATUS.CONFIRMED;
 
   const items = payload.items || [];
-  const subtotal = items.reduce(function (sum, item) {
+  const fallbackTotal = items.reduce(function (sum, item) {
+    const line = item.lineTotal;
+    const lineNum = line == null || line === "" ? NaN : Number(line);
+    if (Number.isFinite(lineNum)) return sum + lineNum;
     return sum + toNumber_(item.price, 0) * toNumber_(item.quantity, 0);
   }, 0);
-  const total = toNumber_(payload.total, subtotal);
+  const total = toNumber_(payload.total, fallbackTotal);
 
   ordersSheet.appendRow([
     orderCode,
     createdAt,
-    customerName,
-    phone,
-    address,
+    facebookName,
     note,
-    subtotal,
-    total,
-    status,
+    formatVnd_(total),
   ]);
 
   if (items.length > 0) {
     const itemRows = items.map(function (item) {
       const price = toNumber_(item.price, 0);
       const quantity = toNumber_(item.quantity, 0);
-      const lineTotal = toNumber_(item.lineTotal, price * quantity);
+      const lineFromPayload = item.lineTotal;
+      const lineParsed =
+        lineFromPayload == null || lineFromPayload === ""
+          ? NaN
+          : Number(lineFromPayload);
+      const lineTotal = Number.isFinite(lineParsed)
+        ? lineParsed
+        : price * quantity;
       return [
         orderCode,
-        sanitizeString_(item.productId),
-        sanitizeString_(item.name || item.productName),
-        price,
+        sanitizeString_(item.productName || item.name),
+        formatVnd_(price),
         quantity,
-        lineTotal,
+        sanitizeString_(item.rarity),
+        formatVnd_(lineTotal),
       ];
     });
 
@@ -56,9 +59,8 @@ function createOrder_(payload) {
   return {
     orderCode: orderCode,
     createdAt: createdAt,
-    customerName: customerName,
+    facebookName: facebookName,
     total: total,
-    status: status,
   };
 }
 
@@ -140,16 +142,32 @@ function validateOrderPayload_(payload) {
   }
 
   const orderCode = sanitizeString_(payload.orderCode);
-  const customerName = sanitizeString_(payload.customerName);
-  const phone = sanitizeString_(payload.phone);
-  const address = sanitizeString_(payload.address);
+  const facebookName = sanitizeString_(payload.facebookName);
   const items = payload.items || [];
 
   if (!orderCode) throw new Error("orderCode is required");
-  if (!customerName) throw new Error("customerName is required");
-  if (!phone) throw new Error("phone is required");
-  if (!address) throw new Error("address is required");
+  if (!facebookName) throw new Error("facebookName is required");
   if (!Array.isArray(items) || items.length === 0) {
     throw new Error("items must be a non-empty array");
   }
+}
+
+function listStocks_() {
+  setupCardShopSheets();
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const khoSheet = ss.getSheetByName(CONFIG.SHEETS.KHO.name);
+  const values = khoSheet.getDataRange().getValues();
+  if (values.length <= 1) return [];
+
+  return values
+    .slice(1)
+    .map(function (row) {
+      return {
+        key: sanitizeString_(row[0]).toUpperCase(),
+        stock: Math.max(0, toNumber_(row[1], 0)),
+      };
+    })
+    .filter(function (item) {
+      return !!item.key;
+    });
 }

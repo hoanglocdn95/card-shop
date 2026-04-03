@@ -10,6 +10,12 @@ function sortProducts(products: Product[], sort: ProductSort) {
   if (sort === "price-desc") {
     return [...products].sort((a, b) => b.price - a.price);
   }
+  if (sort === "name-asc") {
+    return [...products].sort((a, b) => a.name.localeCompare(b.name));
+  }
+  if (sort === "name-desc") {
+    return [...products].sort((a, b) => b.name.localeCompare(a.name));
+  }
   return products;
 }
 
@@ -18,20 +24,24 @@ export async function GET(request: NextRequest) {
     const query = request.nextUrl.searchParams.get("q") ?? undefined;
     const sortParam = request.nextUrl.searchParams.get("sort");
     const sort: ProductSort =
-      sortParam === "price-asc" || sortParam === "price-desc"
-        ? sortParam
-        : "default";
+      sortParam === "price-asc" ||
+      sortParam === "price-desc" ||
+      sortParam === "name-asc" ||
+      sortParam === "name-desc" ||
+      sortParam === "relevance"
+        ? (sortParam as ProductSort)
+        : "relevance";
 
     const pageParam = Number(request.nextUrl.searchParams.get("page") ?? "1");
     const pageSizeParam = Number(
       request.nextUrl.searchParams.get("pageSize") ?? "20",
     );
     const page = Number.isFinite(pageParam) && pageParam > 0 ? pageParam : 1;
-    const allowedPageSizes = new Set([10, 20, 30]);
+    const allowedPageSizes = new Set([50, 100]);
     const pageSize =
       Number.isFinite(pageSizeParam) && allowedPageSizes.has(pageSizeParam)
         ? pageSizeParam
-        : 20;
+        : 50;
 
     const result = await fetchProducts({ searchQuery: query, page, pageSize });
     const response = {

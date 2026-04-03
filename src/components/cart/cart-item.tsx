@@ -28,13 +28,16 @@ export function CartItem({ item, onUpdateQuantity, onRemove }: Props) {
       </div>
       <div className="flex flex-1 flex-col gap-2">
         <p className="text-sm font-semibold text-gray-800">{item.name}</p>
-        <p className="text-xs text-gray-500">SKU: {item.sku}</p>
-        <p className="text-sm text-gray-700">{formatCurrency(item.price)} each</p>
+        <p className="text-sm text-gray-700">
+          {formatCurrency(item.price)} each
+        </p>
         <div className="flex items-center gap-2">
           <button
             type="button"
             className="h-8 w-8 rounded-md border border-gray-300 text-sm font-semibold text-gray-700 hover:bg-gray-50"
-            onClick={() => onUpdateQuantity(item.productId, Math.max(1, item.quantity - 1))}
+            onClick={() =>
+              onUpdateQuantity(item.productId, Math.max(1, item.quantity - 1))
+            }
             aria-label="Decrease quantity"
           >
             -
@@ -58,14 +61,14 @@ export function CartItem({ item, onUpdateQuantity, onRemove }: Props) {
             +
           </button>
           <Button
-            className="h-8 bg-red-500 px-3 py-1 text-xs hover:bg-red-600"
+            className="h-8 bg-[#FFC0CB] px-3 py-1 text-xs text-[#8a2d49] hover:bg-[#f5a8b8]"
             onClick={() => onRemove(item.productId)}
           >
             Remove
           </Button>
         </div>
       </div>
-      <p className="text-sm font-semibold text-blue-700">
+      <p className="text-sm font-semibold text-(--accent-teal)">
         {formatCurrency(item.lineTotal)}
       </p>
     </div>

@@ -6,7 +6,7 @@ type SuccessProps = {
   searchParams: Promise<{
     orderCode?: string;
     total?: string;
-    customerName?: string;
+    facebookName?: string;
     createdAt?: string;
   }>;
 };
@@ -20,13 +20,13 @@ export default async function SuccessPage({ searchParams }: SuccessProps) {
       <SuccessSummary
         orderCode={params.orderCode ?? "-"}
         total={total}
-        customerName={params.customerName ?? "-"}
+        facebookName={params.facebookName ?? "-"}
         createdAt={params.createdAt ?? "-"}
       />
       <p className="mt-3 text-xs text-gray-500">
         If the order does not appear in Sheets within 2 minutes, contact support.
       </p>
-      <Link href="/" className="mt-1 inline-block text-xs text-indigo-600">
+      <Link href="/" className="mt-1 inline-block text-xs text-(--primary)">
         Back to product list
       </Link>
     </main>

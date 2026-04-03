@@ -6,11 +6,11 @@ import { CheckoutForm } from "@/components/checkout/checkout-form";
 import { OrderReview } from "@/components/checkout/order-review";
 import { EmptyState } from "@/components/common/empty-state";
 import { useCart } from "@/hooks/use-cart";
-import { calculateTotal } from "@/lib/order";
 
 export default function CheckoutPage() {
   const { items, subtotal, isReady } = useCart();
-  const total = calculateTotal(items);
+  const shipFee = 35000;
+  const total = subtotal + shipFee;
 
   if (!isReady) {
     return (
@@ -29,7 +29,7 @@ export default function CheckoutPage() {
           title="Cart is empty"
           message="Add products before going to checkout."
         />
-        <Link href="/" className="mt-3 inline-block text-sm text-blue-600">
+        <Link href="/" className="mt-3 inline-block text-sm text-(--primary)">
           Back to product list
         </Link>
       </main>

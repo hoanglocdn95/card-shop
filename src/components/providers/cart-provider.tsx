@@ -35,6 +35,7 @@ function toCartItem(product: Product): CartItem {
     price: product.price,
     quantity: 1,
     lineTotal: product.price,
+    rarity: product.rarity,
   };
 }
 

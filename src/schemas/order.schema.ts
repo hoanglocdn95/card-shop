@@ -1,20 +1,16 @@
 import { z } from "zod";
 
 export const orderItemSchema = z.object({
-  productId: z.string().min(1),
-  sku: z.string().min(1),
-  name: z.string().min(1),
-  image: z.string().url(),
+  productName: z.string().min(1),
   price: z.number().positive(),
   quantity: z.number().int().positive(),
-  lineTotal: z.number().positive(),
+  rarity: z.string().optional(),
 });
 
 export const orderSchema = z.object({
-  customerName: z.string().min(1, "Customer name is required"),
-  phone: z.string().min(1, "Phone is required"),
-  address: z.string().min(1, "Address is required"),
+  facebookName: z.string().min(1, "Facebook name is required"),
   note: z.string().optional(),
+  discountCode: z.string().optional(),
   items: z.array(orderItemSchema).min(1, "Cart must not be empty"),
 });
 

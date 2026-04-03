@@ -1,5 +1,3 @@
-import { CartItem } from "./cart";
-
 export type OrderStatus = "PENDING" | "CONFIRMED" | "FAILED";
 
 export type CustomerInfo = {
@@ -9,15 +7,22 @@ export type CustomerInfo = {
   note?: string;
 };
 
-export type OrderPayload = CustomerInfo & {
-  items: CartItem[];
+export type OrderPayload = {
+  facebookName: string;
+  note?: string;
+  discountCode?: string;
+  items: Array<{
+    productName: string;
+    price: number;
+    quantity: number;
+    rarity?: string;
+  }>;
 };
 
 export type OrderResponse = {
   success: boolean;
   orderCode: string;
   createdAt: string;
-  customerName: string;
+  facebookName: string;
   total: number;
-  status: OrderStatus;
 };

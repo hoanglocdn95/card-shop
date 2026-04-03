@@ -8,14 +8,14 @@ import { formatCurrency } from "@/lib/utils";
 type Props = {
   orderCode: string;
   total: number;
-  customerName: string;
+  facebookName: string;
   createdAt: string;
 };
 
 export function SuccessSummary({
   orderCode,
   total,
-  customerName,
+  facebookName,
   createdAt,
 }: Props) {
   const [copied, setCopied] = useState(false);
@@ -27,9 +27,9 @@ export function SuccessSummary({
   };
 
   return (
-    <div className="rounded-xl border border-green-200 bg-green-50 p-6 shadow-sm">
-      <h1 className="text-2xl font-bold text-green-800">Order successful</h1>
-      <p className="mt-2 text-sm text-green-700">
+    <div className="rounded-xl border border-[#d8f3f3] bg-[#effbfb] p-6 shadow-sm">
+      <h1 className="text-2xl font-bold text-[#046969]">Order successful</h1>
+      <p className="mt-2 text-sm text-[#046969]">
         Your order has been created and saved.
       </p>
       <div className="mt-4 space-y-1 text-sm text-gray-700">
@@ -39,13 +39,13 @@ export function SuccessSummary({
           <button
             type="button"
             onClick={handleCopy}
-            className="text-xs font-semibold text-indigo-600 hover:text-indigo-700"
+            className="text-xs font-semibold text-(--primary) hover:text-(--primary-hover)"
           >
             {copied ? "Copied" : "Copy"}
           </button>
         </p>
         <p>
-          <span className="font-semibold">Customer:</span> {customerName}
+          <span className="font-semibold">Facebook:</span> {facebookName}
         </p>
         <p>
           <span className="font-semibold">Created at:</span> {createdAt}
@@ -54,11 +54,14 @@ export function SuccessSummary({
           <span className="font-semibold">Total:</span> {formatCurrency(total)}
         </p>
       </div>
-      <div className="mt-4 rounded-md border border-green-200 bg-white p-3 text-xs text-gray-600">
+      <div className="mt-4 rounded-md border border-[#f7d96b] bg-[#fff9dd] p-3 text-xs text-[#7a6622]">
         Estimated response time: under 2 minutes. Need support? Contact
         support@cardshop.demo
       </div>
-      <Link href="/" className="mt-5 inline-block text-sm font-semibold text-indigo-600">
+      <Link
+        href="/"
+        className="mt-5 inline-block text-sm font-semibold text-(--primary)"
+      >
         Continue shopping
       </Link>
     </div>
