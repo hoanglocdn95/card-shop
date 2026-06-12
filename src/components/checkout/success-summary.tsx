@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 
+import { useI18n } from "@/components/providers/i18n-provider";
 import { formatCurrency } from "@/lib/utils";
 
 type Props = {
@@ -18,6 +19,7 @@ export function SuccessSummary({
   facebookName,
   createdAt,
 }: Props) {
+  const { t } = useI18n();
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
@@ -28,41 +30,39 @@ export function SuccessSummary({
 
   return (
     <div className="rounded-xl border border-[#d8f3f3] bg-[#effbfb] p-6 shadow-sm">
-      <h1 className="text-2xl font-bold text-[#046969]">Order successful</h1>
-      <p className="mt-2 text-sm text-[#046969]">
-        Your order has been created and saved.
-      </p>
+      <h1 className="text-2xl font-bold text-[#046969]">{t("success.title")}</h1>
+      <p className="mt-2 text-sm text-[#046969]">{t("success.subtitle")}</p>
       <div className="mt-4 space-y-1 text-sm text-gray-700">
         <p className="flex items-center gap-2">
-          <span className="font-semibold">Order code:</span>
+          <span className="font-semibold">{t("success.orderCode")}:</span>
           <code className="rounded bg-white px-1.5 py-0.5 text-xs">{orderCode}</code>
           <button
             type="button"
             onClick={handleCopy}
             className="text-xs font-semibold text-(--primary) hover:text-(--primary-hover)"
           >
-            {copied ? "Copied" : "Copy"}
+            {copied ? t("success.copied") : t("success.copy")}
           </button>
         </p>
         <p>
-          <span className="font-semibold">Facebook:</span> {facebookName}
+          <span className="font-semibold">{t("success.facebook")}:</span> {facebookName}
         </p>
         <p>
-          <span className="font-semibold">Created at:</span> {createdAt}
+          <span className="font-semibold">{t("success.createdAt")}:</span> {createdAt}
         </p>
         <p>
-          <span className="font-semibold">Total:</span> {formatCurrency(total)}
+          <span className="font-semibold">{t("success.total")}:</span>{" "}
+          {formatCurrency(total)}
         </p>
       </div>
       <div className="mt-4 rounded-md border border-[#f7d96b] bg-[#fff9dd] p-3 text-xs text-[#7a6622]">
-        Estimated response time: under 2 minutes. Need support? Contact
-        support@cardshop.demo
+        {t("success.responseNote")}
       </div>
       <Link
         href="/"
         className="mt-5 inline-block text-sm font-semibold text-(--primary)"
       >
-        Continue shopping
+        {t("success.continueShopping")}
       </Link>
     </div>
   );

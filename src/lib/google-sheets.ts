@@ -21,7 +21,6 @@ export type AppendOrderInput = {
     price: number;
     quantity: number;
     rarity?: string;
-    lineTotal: number;
   }>;
 };
 
@@ -74,7 +73,7 @@ export async function appendOrderToGoogleSheets(input: AppendOrderInput) {
   if (input.items.length > 0) {
     await sheets.spreadsheets.values.append({
       spreadsheetId: env.GOOGLE_SHEET_ID,
-      range: `${ORDER_ITEMS_SHEET_NAME}!A:F`,
+      range: `${ORDER_ITEMS_SHEET_NAME}!A:E`,
       valueInputOption: "USER_ENTERED",
       requestBody: {
         values: input.items.map((item) => [
@@ -83,7 +82,6 @@ export async function appendOrderToGoogleSheets(input: AppendOrderInput) {
           formatVndForSheet(item.price),
           item.quantity,
           item.rarity ?? "",
-          formatVndForSheet(item.lineTotal),
         ]),
       },
     });

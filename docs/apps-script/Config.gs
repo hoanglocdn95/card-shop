@@ -1,12 +1,73 @@
 const CONFIG = {
   SHEETS: {
+    PRODUCTS_TCG: {
+      name: "ProductsTCG",
+      headers: [
+        "game",
+        "id",
+        "cardCode",
+        "name",
+        "displayName",
+        "image",
+        "rarity",
+        "cardType",
+        "set",
+        "subtypes",
+        "priceUsd",
+        "tcgPlayerUrl",
+      ],
+    },
+    INVENTORY: {
+      name: "Inventory",
+      headers: [
+        "game",
+        "id",
+        "cardCode",
+        "name",
+        "displayName",
+        "image",
+        "rarity",
+        "cardType",
+        "priceUsd",
+        "stock",
+        "set",
+        "subtypes",
+        "tcgPlayerUrl",
+      ],
+    },
+    VOUCHERS: {
+      name: "Vouchers",
+      headers: [
+        "code",
+        "type",
+        "scope",
+        "value",
+        "maxUses",
+        "usedCount",
+        "expiresAt",
+        "allowedTiers",
+        "active",
+      ],
+    },
+    /** @deprecated kept for older spreadsheets */
+    SHIPPING_RULES: {
+      name: "ShippingRules",
+      headers: ["minSubtotal", "shippingFee"],
+    },
+    SHIPPING_TIERS: {
+      name: "ShippingTiers",
+      headers: ["customerTier", "shippingFee", "note"],
+    },
     ORDERS: {
       name: "Orders",
       headers: [
         "orderCode",
         "createdAt",
         "facebookName",
+        "customerTier",
         "note",
+        "shippingFee",
+        "discountCode",
         "total",
       ],
     },
@@ -14,16 +75,19 @@ const CONFIG = {
       name: "OrderItems",
       headers: [
         "orderCode",
+        "productId",
+        "cardCode",
         "productName",
         "price",
         "quantity",
         "rarity",
         "lineTotal",
+        "source",
       ],
     },
-    KHO: {
-      name: "Kho",
-      headers: ["key", "stock"],
+    SETTINGS: {
+      name: "Settings",
+      headers: ["key", "value"],
     },
   },
   STYLE: {
@@ -46,6 +110,22 @@ const CONFIG = {
   SCRIPT_PROPERTIES: {
     API_TOKEN: "API_TOKEN",
   },
+  CACHE: {
+    PRODUCTS_TCG_KEY: "products_tcg_v1",
+    INVENTORY_KEY: "inventory_v1",
+    SETTINGS_KEY: "settings_v1",
+    TTL_SECONDS: 600,
+    /** Script Cache value limit is 100 KB; stay below to avoid put() errors. */
+    MAX_VALUE_BYTES: 90000,
+    CHUNK_SUFFIX: ":chunk:",
+    META_SUFFIX: ":meta",
+  },
   DEFAULT_LIST_LIMIT: 50,
   MAX_LIST_LIMIT: 200,
+  DEFAULTS: {
+    USD_VND_RATE: 25000,
+    PRICE_MULTIPLIER: 1.1,
+    SHIPPING_FEE: 36000,
+    TCG_ORDER_STOCK: 999,
+  },
 };

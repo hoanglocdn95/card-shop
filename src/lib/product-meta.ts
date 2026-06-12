@@ -24,5 +24,10 @@ export function getProductColor(product: Product): ProductColor {
 }
 
 export function isInStock(product: Product) {
+  if (product.fulfillmentStatus === "tcg-order") return true;
   return (product.stock ?? 0) > 0;
+}
+
+export function isTcgOrderProduct(product: Product) {
+  return product.fulfillmentStatus === "tcg-order";
 }

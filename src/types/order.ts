@@ -1,21 +1,19 @@
-export type OrderStatus = "PENDING" | "CONFIRMED" | "FAILED";
+import type { ProductGame, ProductListingSource } from "@/types/product";
 
-export type CustomerInfo = {
-  customerName: string;
-  phone: string;
-  address: string;
-  note?: string;
-};
+export type OrderStatus = "PENDING" | "CONFIRMED" | "FAILED";
 
 export type OrderPayload = {
   facebookName: string;
+  customerTier?: "guest" | "friend" | "vip";
   note?: string;
   discountCode?: string;
   items: Array<{
-    productName: string;
-    price: number;
+    productId: string;
+    cardCode: string;
+    game: ProductGame;
     quantity: number;
     rarity?: string;
+    source: ProductListingSource;
   }>;
 };
 
@@ -25,4 +23,6 @@ export type OrderResponse = {
   createdAt: string;
   facebookName: string;
   total: number;
+  subtotal?: number;
+  shippingFee?: number;
 };

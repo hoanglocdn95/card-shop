@@ -1,58 +1,57 @@
 function createOrder_(payload) {
   validateOrderPayload_(payload);
-  setupCardShopSheets();
+  ensureSheetStructure_(SpreadsheetApp.getActiveSpreadsheet(), false);
+
+  const checkout = computeCheckout_(payload);
+  const orderCode = generateOrderCode_();
+  const createdAt = new Date().toISOString();
+  const facebookName = sanitizeString_(payload.facebookName);
+  const customerTier = normalizeCustomerTier_(payload.customerTier);
+  const note = sanitizeString_(payload.note);
+  const discountCode = sanitizeString_(payload.discountCode);
 
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const ordersSheet = ss.getSheetByName(CONFIG.SHEETS.ORDERS.name);
   const orderItemsSheet = ss.getSheetByName(CONFIG.SHEETS.ORDER_ITEMS.name);
 
-  const orderCode = sanitizeString_(payload.orderCode);
-  const createdAt = sanitizeString_(payload.createdAt) || new Date().toISOString();
-  const facebookName = sanitizeString_(payload.facebookName);
-  const note = sanitizeString_(payload.note);
-
-  const items = payload.items || [];
-  const fallbackTotal = items.reduce(function (sum, item) {
-    const line = item.lineTotal;
-    const lineNum = line == null || line === "" ? NaN : Number(line);
-    if (Number.isFinite(lineNum)) return sum + lineNum;
-    return sum + toNumber_(item.price, 0) * toNumber_(item.quantity, 0);
-  }, 0);
-  const total = toNumber_(payload.total, fallbackTotal);
-
   ordersSheet.appendRow([
     orderCode,
     createdAt,
     facebookName,
+    customerTier,
     note,
-    formatVnd_(total),
+    formatVnd_(checkout.shippingFee),
+    discountCode,
+    formatVnd_(checkout.total),
   ]);
 
-  if (items.length > 0) {
-    const itemRows = items.map(function (item) {
-      const price = toNumber_(item.price, 0);
-      const quantity = toNumber_(item.quantity, 0);
-      const lineFromPayload = item.lineTotal;
-      const lineParsed =
-        lineFromPayload == null || lineFromPayload === ""
-          ? NaN
-          : Number(lineFromPayload);
-      const lineTotal = Number.isFinite(lineParsed)
-        ? lineParsed
-        : price * quantity;
+  if (discountCode && checkout.discount && checkout.discount.type !== "none") {
+    incrementVoucherUsage_(discountCode);
+  }
+
+  if (checkout.lines.length > 0) {
+    const itemRows = checkout.lines.map(function (line) {
       return [
         orderCode,
-        sanitizeString_(item.productName || item.name),
-        formatVnd_(price),
-        quantity,
-        sanitizeString_(item.rarity),
-        formatVnd_(lineTotal),
+        line.productId,
+        line.cardCode,
+        line.productName,
+        formatVnd_(line.price),
+        line.quantity,
+        line.rarity,
+        formatVnd_(line.lineTotal),
+        line.source || "tcg",
       ];
     });
 
     const startRow = orderItemsSheet.getLastRow() + 1;
     orderItemsSheet
-      .getRange(startRow, 1, itemRows.length, CONFIG.SHEETS.ORDER_ITEMS.headers.length)
+      .getRange(
+        startRow,
+        1,
+        itemRows.length,
+        CONFIG.SHEETS.ORDER_ITEMS.headers.length
+      )
       .setValues(itemRows);
   }
 
@@ -60,12 +59,16 @@ function createOrder_(payload) {
     orderCode: orderCode,
     createdAt: createdAt,
     facebookName: facebookName,
-    total: total,
+    subtotal: checkout.subtotal,
+    shippingFee: checkout.shippingFee,
+    discount: checkout.discount,
+    total: checkout.total,
+    items: checkout.lines,
   };
 }
 
 function listOrders_(limit) {
-  setupCardShopSheets();
+  ensureSheetStructure_(SpreadsheetApp.getActiveSpreadsheet(), false);
 
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheet = ss.getSheetByName(CONFIG.SHEETS.ORDERS.name);
@@ -94,7 +97,7 @@ function listOrders_(limit) {
 }
 
 function getOrderByCode_(orderCode) {
-  setupCardShopSheets();
+  ensureSheetStructure_(SpreadsheetApp.getActiveSpreadsheet(), false);
 
   const code = sanitizeString_(orderCode);
   if (!code) throw new Error("orderCode is required");
@@ -141,33 +144,28 @@ function validateOrderPayload_(payload) {
     throw new Error("payload must be an object");
   }
 
-  const orderCode = sanitizeString_(payload.orderCode);
   const facebookName = sanitizeString_(payload.facebookName);
   const items = payload.items || [];
 
-  if (!orderCode) throw new Error("orderCode is required");
   if (!facebookName) throw new Error("facebookName is required");
   if (!Array.isArray(items) || items.length === 0) {
     throw new Error("items must be a non-empty array");
   }
+
+  items.forEach(function (item, index) {
+    const quantity = toNumber_(item.quantity, 0);
+    if (!Number.isFinite(quantity) || quantity <= 0) {
+      throw new Error("Invalid quantity at item index " + index);
+    }
+    const productId = sanitizeString_(item.productId);
+    const cardCode = sanitizeString_(item.cardCode);
+    if (!productId && !cardCode) {
+      throw new Error("Each item needs productId or cardCode at index " + index);
+    }
+  });
 }
 
+/** @deprecated alias */
 function listStocks_() {
-  setupCardShopSheets();
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const khoSheet = ss.getSheetByName(CONFIG.SHEETS.KHO.name);
-  const values = khoSheet.getDataRange().getValues();
-  if (values.length <= 1) return [];
-
-  return values
-    .slice(1)
-    .map(function (row) {
-      return {
-        key: sanitizeString_(row[0]).toUpperCase(),
-        stock: Math.max(0, toNumber_(row[1], 0)),
-      };
-    })
-    .filter(function (item) {
-      return !!item.key;
-    });
+  return listInventory_();
 }

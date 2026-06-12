@@ -8,6 +8,11 @@
     "dev": "next dev -p 3002",
     "start": "next start",
     "lint": "eslint",
+    "tcg:discover": "tsx scripts/tcgplayer-export/export.ts discover",
+    "tcg:export": "tsx scripts/tcgplayer-export/export.ts export",
+    "mp:capture": "node scripts/mp-search-crawl/capture-network.mjs",
+    "mp:export": "tsx scripts/mp-search-crawl/export.ts export",
+    "catalog:split": "node scripts/split-tcgplayer-catalog.mjs",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
     "upload": "opennextjs-cloudflare build && opennextjs-cloudflare upload",
@@ -34,7 +39,9 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.1",
+    "playwright": "^1.52.0",
     "tailwindcss": "^4",
+    "tsx": "^4.20.5",
     "typescript": "^5",
     "wrangler": "^4.77.0"
   }

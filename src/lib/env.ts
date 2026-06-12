@@ -40,7 +40,8 @@ export function shouldBypassGoogleSheetsInDev() {
 }
 
 export function getOrderStorageProvider() {
-  return process.env.ORDER_STORAGE_PROVIDER === "apps_script"
-    ? "apps_script"
-    : "googleapis";
+  if (process.env.ORDER_STORAGE_PROVIDER === "googleapis") {
+    return "googleapis";
+  }
+  return "apps_script";
 }

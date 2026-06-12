@@ -1,7 +1,28 @@
+export type ProductGame = "one-piece" | "riftbound";
+
+export const PRODUCT_GAMES: ProductGame[] = ["one-piece", "riftbound"];
+
+export type ProductListingSource = "inventory" | "tcg";
+
+export type ProductFulfillmentStatus = "in-stock" | "out-of-stock" | "tcg-order";
+
+export function isProductGame(value: string | null): value is ProductGame {
+  return value === "one-piece" || value === "riftbound";
+}
+
+export function isProductListingSource(
+  value: string | null,
+): value is ProductListingSource {
+  return value === "inventory" || value === "tcg";
+}
+
 export type Product = {
   id: string;
+  game: ProductGame;
+  cardCode: string;
   sku: string;
   name: string;
+  displayName: string;
   image: string;
   price: number;
   stock?: number;
@@ -10,6 +31,8 @@ export type Product = {
   set?: string;
   subtypes?: string[];
   tcgPlayerUrl?: string;
+  listingSource?: ProductListingSource;
+  fulfillmentStatus?: ProductFulfillmentStatus;
 };
 
 export type ProductSort =
@@ -30,4 +53,5 @@ export type ProductsQueryResponse = {
   products: Product[];
   pagination: ProductsPagination;
   sort: ProductSort;
+  source: ProductListingSource;
 };

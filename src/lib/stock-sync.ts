@@ -21,7 +21,7 @@ export async function getStockMapFromKho(): Promise<Record<string, number>> {
   }
 
   const params = new URLSearchParams({
-    action: "listStock",
+    action: "listInventory",
     token,
   });
 

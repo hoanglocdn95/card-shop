@@ -1,10 +1,21 @@
+import { GridColumnsPerRow } from "@/components/product/product-list";
+
 type Props = {
   count?: number;
+  columnsPerRow?: GridColumnsPerRow;
 };
 
-export function ProductGridSkeleton({ count = 8 }: Props) {
+const columnsClassMap: Record<GridColumnsPerRow, string> = {
+  2: "grid-cols-2",
+  4: "grid-cols-2 xl:grid-cols-4",
+};
+
+export function ProductGridSkeleton({
+  count = 8,
+  columnsPerRow = 4,
+}: Props) {
   return (
-    <section className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+    <section className={`grid gap-4 ${columnsClassMap[columnsPerRow]}`}>
       {Array.from({ length: count }).map((_, index) => (
         <div
           key={index}

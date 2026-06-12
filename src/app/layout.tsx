@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
 import { CartProvider } from "@/components/providers/cart-provider";
+import { I18nProvider } from "@/components/providers/i18n-provider";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { ToastProvider } from "@/components/providers/toast-provider";
 import "./globals.css";
@@ -17,8 +18,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Card Shop Demo",
-  description: "Demo app with TCG API and Google Sheets order flow",
+  title: "Card Shop",
+  description: "Báo giá card và gửi đơn vào Google Sheet",
   icons: {
     icon: [{ url: "/logo.png", type: "image/png" }],
     shortcut: "/logo.png",
@@ -33,14 +34,16 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
+      lang="vi"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="flex min-h-dvh flex-col">
         <QueryProvider>
-          <ToastProvider>
-            <CartProvider>{children}</CartProvider>
-          </ToastProvider>
+          <I18nProvider>
+            <ToastProvider>
+              <CartProvider>{children}</CartProvider>
+            </ToastProvider>
+          </I18nProvider>
         </QueryProvider>
       </body>
     </html>

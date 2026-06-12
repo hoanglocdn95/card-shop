@@ -1,16 +1,17 @@
 import { ProductCard } from "@/components/product/product-card";
 import { Product } from "@/types/product";
 
+export type GridColumnsPerRow = 2 | 4;
+
 type Props = {
   products: Product[];
   onAdd: (product: Product) => void;
-  columnsPerRow: 2 | 3 | 4;
+  columnsPerRow: GridColumnsPerRow;
 };
 
-const columnsClassMap: Record<2 | 3 | 4, string> = {
-  2: "grid-cols-2 lg:grid-cols-2",
-  3: "grid-cols-2 lg:grid-cols-3",
-  4: "grid-cols-2 lg:grid-cols-4",
+const columnsClassMap: Record<GridColumnsPerRow, string> = {
+  2: "grid-cols-2",
+  4: "grid-cols-2 xl:grid-cols-4",
 };
 
 export function ProductList({ products, onAdd, columnsPerRow }: Props) {

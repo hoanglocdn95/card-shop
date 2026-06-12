@@ -1,7 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { fetchProducts } from "@/lib/tcg-api";
-import { Product, ProductSort } from "@/types/product";
+import {
+  isProductGame,
+  isProductListingSource,
+  Product,
+  ProductGame,
+  ProductListingSource,
+  ProductSort,
+} from "@/types/product";
 
 function sortProducts(products: Product[], sort: ProductSort) {
   if (sort === "price-asc") {
@@ -22,6 +29,8 @@ function sortProducts(products: Product[], sort: ProductSort) {
 export async function GET(request: NextRequest) {
   try {
     const query = request.nextUrl.searchParams.get("q") ?? undefined;
+    const gameParam = request.nextUrl.searchParams.get("game");
+    const game: ProductGame = isProductGame(gameParam) ? gameParam : "one-piece";
     const sortParam = request.nextUrl.searchParams.get("sort");
     const sort: ProductSort =
       sortParam === "price-asc" ||
@@ -43,7 +52,18 @@ export async function GET(request: NextRequest) {
         ? pageSizeParam
         : 50;
 
-    const result = await fetchProducts({ searchQuery: query, page, pageSize });
+    const sourceParam = request.nextUrl.searchParams.get("source");
+    const source: ProductListingSource = isProductListingSource(sourceParam)
+      ? sourceParam
+      : "inventory";
+
+    const result = await fetchProducts({
+      searchQuery: query,
+      game,
+      page,
+      pageSize,
+      source,
+    });
     const response = {
       products: sortProducts(result.products, sort),
       pagination: {
@@ -53,6 +73,7 @@ export async function GET(request: NextRequest) {
         hasNextPage: result.hasNextPage,
       },
       sort,
+      source: result.source,
     };
 
     return NextResponse.json(response, { status: 200 });

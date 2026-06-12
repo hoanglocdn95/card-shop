@@ -1,5 +1,4 @@
-import Link from "next/link";
-
+import { SuccessFooter } from "@/components/checkout/success-footer";
 import { SuccessSummary } from "@/components/checkout/success-summary";
 
 type SuccessProps = {
@@ -23,12 +22,7 @@ export default async function SuccessPage({ searchParams }: SuccessProps) {
         facebookName={params.facebookName ?? "-"}
         createdAt={params.createdAt ?? "-"}
       />
-      <p className="mt-3 text-xs text-gray-500">
-        If the order does not appear in Sheets within 2 minutes, contact support.
-      </p>
-      <Link href="/" className="mt-1 inline-block text-xs text-(--primary)">
-        Back to product list
-      </Link>
+      <SuccessFooter />
     </main>
   );
 }

@@ -42,3 +42,13 @@ next-env.d.ts
 
 # OpenNext
 .open-next
+
+# TCGplayer export artifacts
+/.tcgplayer-export/
+/.mp-search-crawl/
+/data/tcgplayer-catalog.csv
+/data/tcgplayer-catalog-one-piece.csv
+/data/tcgplayer-catalog-riftbound.csv
+scripts/mp-search-crawl/.capture-output.json
+.tmp-*.json
+.tmp-*.js

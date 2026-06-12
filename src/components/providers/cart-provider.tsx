@@ -11,15 +11,31 @@ import {
 
 import { calculateSubtotal } from "@/lib/order";
 import { CartItem } from "@/types/cart";
-import { Product } from "@/types/product";
+import { Product, ProductListingSource } from "@/types/product";
+
+function lineSourceOf(product: Product): ProductListingSource {
+  return product.listingSource ?? "inventory";
+}
+
+function isSameCartLine(
+  item: CartItem,
+  productId: string,
+  source: ProductListingSource,
+) {
+  return item.productId === productId && item.source === source;
+}
 
 type CartContextValue = {
   items: CartItem[];
   subtotal: number;
   isReady: boolean;
   addItem: (product: Product) => void;
-  removeItem: (productId: string) => void;
-  updateQuantity: (productId: string, quantity: number) => void;
+  removeItem: (productId: string, source: ProductListingSource) => void;
+  updateQuantity: (
+    productId: string,
+    source: ProductListingSource,
+    quantity: number,
+  ) => void;
   clearCart: () => void;
 };
 
@@ -29,13 +45,17 @@ const CartContext = createContext<CartContextValue | null>(null);
 function toCartItem(product: Product): CartItem {
   return {
     productId: product.id,
+    game: product.game,
+    cardCode: product.cardCode,
     sku: product.sku,
     name: product.name,
+    displayName: product.displayName,
     image: product.image,
     price: product.price,
     quantity: 1,
     lineTotal: product.price,
     rarity: product.rarity,
+    source: lineSourceOf(product),
   };
 }
 
@@ -52,7 +72,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
     try {
       const parsed = JSON.parse(raw) as CartItem[];
-      setItems(parsed);
+      const normalized: CartItem[] = parsed.map((item) => ({
+        ...item,
+        game: item.game === "riftbound" ? "riftbound" : "one-piece",
+        cardCode: item.cardCode ?? item.sku ?? item.productId,
+        displayName: item.displayName ?? item.name,
+        source: item.source === "tcg" ? "tcg" : "inventory",
+      }));
+      setItems(normalized);
     } catch {
       window.localStorage.removeItem(STORAGE_KEY);
     } finally {
@@ -67,14 +94,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<CartContextValue>(() => {
     const addItem = (product: Product) => {
+      const source = lineSourceOf(product);
       setItems((prev) => {
-        const existing = prev.find((item) => item.productId === product.id);
+        const existing = prev.find((item) =>
+          isSameCartLine(item, product.id, source),
+        );
         if (!existing) {
           return [...prev, toCartItem(product)];
         }
 
         return prev.map((item) =>
-          item.productId === product.id
+          isSameCartLine(item, product.id, source)
             ? {
                 ...item,
                 quantity: item.quantity + 1,
@@ -85,15 +115,21 @@ export function CartProvider({ children }: { children: ReactNode }) {
       });
     };
 
-    const removeItem = (productId: string) => {
-      setItems((prev) => prev.filter((item) => item.productId !== productId));
+    const removeItem = (productId: string, source: ProductListingSource) => {
+      setItems((prev) =>
+        prev.filter((item) => !isSameCartLine(item, productId, source)),
+      );
     };
 
-    const updateQuantity = (productId: string, quantity: number) => {
+    const updateQuantity = (
+      productId: string,
+      source: ProductListingSource,
+      quantity: number,
+    ) => {
       setItems((prev) =>
         prev
           .map((item) =>
-            item.productId === productId
+            isSameCartLine(item, productId, source)
               ? {
                   ...item,
                   quantity,

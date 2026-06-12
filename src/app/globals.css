@@ -11,7 +11,17 @@
 }
 
 body {
-  background: var(--background);
+  background-color: var(--background);
+  background-image:
+    radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.75), transparent 35%),
+    radial-gradient(circle at 80% 0%, rgba(255, 224, 196, 0.25), transparent 30%),
+    repeating-linear-gradient(
+      35deg,
+      rgba(255, 255, 255, 0.16) 0px,
+      rgba(255, 255, 255, 0.16) 2px,
+      rgba(245, 247, 251, 0.12) 2px,
+      rgba(245, 247, 251, 0.12) 8px
+    );
   color: var(--foreground);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
   line-height: 1.5;
@@ -20,4 +30,43 @@ body {
 
 * {
   box-sizing: border-box;
+}
+
+.texture-card-paper {
+  border-color: rgba(180, 160, 130, 0.4);
+  background-color: #f8f5ef;
+  background-image:
+    radial-gradient(circle at 18% 12%, rgba(255, 255, 255, 0.85), transparent 42%),
+    radial-gradient(circle at 82% 88%, rgba(210, 190, 160, 0.18), transparent 38%),
+    linear-gradient(160deg, rgba(255, 255, 255, 0.55) 0%, transparent 45%),
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 3px,
+      rgba(120, 100, 70, 0.03) 3px,
+      rgba(120, 100, 70, 0.03) 4px
+    );
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.texture-card-metal {
+  border-color: rgba(148, 163, 184, 0.55);
+  background-color: #eef1f5;
+  background-image:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.75) 0%, transparent 42%),
+    linear-gradient(315deg, rgba(148, 163, 184, 0.22) 0%, transparent 48%),
+    repeating-linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.08) 0px,
+      rgba(255, 255, 255, 0.08) 1px,
+      transparent 1px,
+      transparent 4px
+    ),
+    linear-gradient(180deg, #f8fafc 0%, #e2e8f0 55%, #f1f5f9 100%);
+  box-shadow:
+    0 2px 6px rgba(15, 23, 42, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.85),
+    inset 0 -1px 0 rgba(100, 116, 139, 0.15);
 }
